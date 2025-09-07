@@ -1,0 +1,30 @@
+{
+	"name": "nuxt-app",
+	"type": "module",
+	"private": true,
+	"scripts": {
+		"build": "nuxt build",
+		"dev": "nuxt dev",
+		"generate": "nuxt generate",
+		"preview": "npm run build && wrangler dev",
+		"postinstall": "nuxt prepare",
+		"deploy": "npm run build && wrangler deploy",
+		"cf-typegen": "wrangler types",
+		"lint": "eslint --ext .js,.ts,.vue .",
+		"lint:fix": "eslint --ext .js,.ts,.vue . --fix"
+	},
+	"dependencies": {
+		"@nuxt/eslint": "^1.9.0",
+		"@nuxt/ui": "^3.3.3",
+		"eslint": "^9.35.0",
+		"nuxt": "^4.1.1",
+		"vue": "^3.5.20",
+		"vue-router": "^4.5.1"
+	},
+	"devDependencies": {
+		"nitro-cloudflare-dev": "^0.2.2",
+		"nitropack": "^2.12.5",
+		"typescript": "^5.9.2",
+		"wrangler": "^4.34.0"
+	}
+}
