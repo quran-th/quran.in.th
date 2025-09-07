@@ -1,0 +1,619 @@
+@import "tailwindcss";
+@import "@nuxt/ui";
+
+/* Inter Font Family with Thai Character Support */
+@font-face {
+  font-family: 'Inter';
+  src: url('/fonts/InterThaiLoopless-Thin.ttf') format('truetype');
+  font-weight: 100;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Inter';
+  src: url('/fonts/InterThaiLoopless-ThinItalic.ttf') format('truetype');
+  font-weight: 100;
+  font-style: italic;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Inter';
+  src: url('/fonts/InterThaiLoopless-ExtraLight.ttf') format('truetype');
+  font-weight: 200;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Inter';
+  src: url('/fonts/InterThaiLoopless-ExtraLightItalic.ttf') format('truetype');
+  font-weight: 200;
+  font-style: italic;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Inter';
+  src: url('/fonts/InterThaiLoopless-Light.ttf') format('truetype');
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Inter';
+  src: url('/fonts/InterThaiLoopless-LightItalic.ttf') format('truetype');
+  font-weight: 300;
+  font-style: italic;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Inter';
+  src: url('/fonts/InterThaiLoopless-Regular.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Inter';
+  src: url('/fonts/InterThaiLoopless-Italic.ttf') format('truetype');
+  font-weight: 400;
+  font-style: italic;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Inter';
+  src: url('/fonts/InterThaiLoopless-Medium.ttf') format('truetype');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Inter';
+  src: url('/fonts/InterThaiLoopless-MediumItalic.ttf') format('truetype');
+  font-weight: 500;
+  font-style: italic;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Inter';
+  src: url('/fonts/InterThaiLoopless-SemiBold.ttf') format('truetype');
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Inter';
+  src: url('/fonts/InterThaiLoopless-SemiBoldItalic.ttf') format('truetype');
+  font-weight: 600;
+  font-style: italic;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Inter';
+  src: url('/fonts/InterThaiLoopless-Bold.ttf') format('truetype');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Inter';
+  src: url('/fonts/InterThaiLoopless-BoldItalic.ttf') format('truetype');
+  font-weight: 700;
+  font-style: italic;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Inter';
+  src: url('/fonts/InterThaiLoopless-ExtraBold.ttf') format('truetype');
+  font-weight: 800;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Inter';
+  src: url('/fonts/InterThaiLoopless-ExtraBoldItalic.ttf') format('truetype');
+  font-weight: 800;
+  font-style: italic;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Inter';
+  src: url('/fonts/InterThaiLoopless-Black.ttf') format('truetype');
+  font-weight: 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Inter';
+  src: url('/fonts/InterThaiLoopless-BlackItalic.ttf') format('truetype');
+  font-weight: 900;
+  font-style: italic;
+  font-display: swap;
+}
+
+/* Global font application */
+* {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+}
+
+html, body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  margin: 0;
+  padding: 0;
+  height: 100vh;
+  overflow-x: hidden;
+}
+
+/* Mobile-first design system */
+:root {
+  /* Light mode colors */
+  --bg-primary: #f8fafc;
+  --bg-secondary: #ffffff;
+  --bg-tertiary: #f1f5f9;
+  --text-primary: #0f172a;
+  --text-secondary: #475569;
+  --text-tertiary: #94a3b8;
+  --border-color: #e2e8f0;
+  --card-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+  --card-shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  --accent-primary: #3b82f6;
+  --accent-secondary: #8b5cf6;
+}
+
+/* Dark mode colors */
+.dark {
+  --bg-primary: #0f172a;
+  --bg-secondary: #1e293b;
+  --bg-tertiary: #334155;
+  --text-primary: #f8fafc;
+  --text-secondary: #cbd5e1;
+  --text-tertiary: #64748b;
+  --border-color: #334155;
+  --card-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.3), 0 1px 2px 0 rgba(0, 0, 0, 0.2);
+  --card-shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.3), 0 4px 6px -2px rgba(0, 0, 0, 0.2);
+  --accent-primary: #60a5fa;
+  --accent-secondary: #a78bfa;
+}
+
+/* Responsive app container */
+.app-container {
+  min-height: 100vh;
+  background: var(--bg-primary);
+  position: relative;
+  width: 100%;
+}
+
+/* Mobile-first responsive breakpoints */
+@media (max-width: 767px) {
+  .app-container {
+    max-width: 430px;
+    margin: 0 auto;
+    box-shadow: 0 0 50px rgba(0, 0, 0, 0.1);
+  }
+}
+
+@media (min-width: 768px) {
+  .app-container {
+    max-width: 768px;
+    margin: 0 auto;
+    padding: 0 1.5rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .app-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 2rem;
+  }
+}
+
+@media (min-width: 1400px) {
+  .app-container {
+    max-width: 1400px;
+    padding: 0 3rem;
+  }
+}
+
+/* Responsive Arabic text styling */
+.arabic-text {
+  font-family: 'Amiri', 'Scheherazade New', 'Times New Roman', serif;
+  font-size: 1.5rem;
+  line-height: 2.2;
+  font-weight: 400;
+  letter-spacing: 0.02em;
+  color: var(--text-primary);
+}
+
+@media (min-width: 375px) {
+  .arabic-text {
+    font-size: 1.75rem;
+  }
+}
+
+@media (min-width: 768px) {
+  .arabic-text {
+    font-size: 2rem;
+    line-height: 2.4;
+  }
+}
+
+@media (min-width: 1024px) {
+  .arabic-text {
+    font-size: 2.25rem;
+    line-height: 2.6;
+  }
+}
+
+/* RTL support */
+[dir="rtl"] {
+  text-align: right;
+  direction: rtl;
+}
+
+/* Modern card system */
+.modern-card {
+  background: var(--bg-secondary);
+  border-radius: 20px;
+  box-shadow: var(--card-shadow);
+  border: 1px solid var(--border-color);
+  overflow: hidden;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.modern-card:hover {
+  box-shadow: var(--card-shadow-lg);
+  transform: translateY(-2px);
+}
+
+.modern-card-elevated {
+  background: var(--bg-secondary);
+  border-radius: 24px;
+  box-shadow: var(--card-shadow-lg);
+  border: 1px solid var(--border-color);
+}
+
+/* Hero sections with gradients */
+.hero-gradient {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 20px;
+  overflow: hidden;
+  position: relative;
+}
+
+.dark .hero-gradient {
+  background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+}
+
+/* Responsive player controls */
+.player-control {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-secondary);
+  box-shadow: var(--card-shadow);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  color: var(--text-primary);
+}
+
+@media (min-width: 768px) {
+  .player-control {
+    width: 60px;
+    height: 60px;
+  }
+}
+
+@media (min-width: 1024px) {
+  .player-control {
+    width: 64px;
+    height: 64px;
+  }
+}
+
+.player-control:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--card-shadow-lg);
+}
+
+.player-control-primary {
+  width: 72px;
+  height: 72px;
+  background: var(--accent-primary);
+  color: white;
+}
+
+@media (min-width: 768px) {
+  .player-control-primary {
+    width: 80px;
+    height: 80px;
+  }
+}
+
+@media (min-width: 1024px) {
+  .player-control-primary {
+    width: 88px;
+    height: 88px;
+  }
+}
+
+/* Progress bars and sliders */
+.modern-slider {
+  height: 4px;
+  background: var(--bg-tertiary);
+  border-radius: 2px;
+  position: relative;
+  overflow: hidden;
+}
+
+.modern-slider-progress {
+  height: 100%;
+  background: var(--accent-primary);
+  border-radius: 2px;
+  transition: width 0.1s ease;
+}
+
+/* Bottom navigation */
+.bottom-nav {
+  position: fixed;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100%;
+  max-width: 430px;
+  background: var(--bg-secondary);
+  border-top: 1px solid var(--border-color);
+  padding: 12px 0 env(safe-area-inset-bottom);
+  z-index: 50;
+}
+
+/* Responsive typography scale */
+.text-heading {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  line-height: 1.3;
+}
+
+@media (min-width: 768px) {
+  .text-heading {
+    font-size: 1.75rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .text-heading {
+    font-size: 2rem;
+  }
+}
+
+.text-subheading {
+  font-size: 1rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+  line-height: 1.4;
+}
+
+@media (min-width: 768px) {
+  .text-subheading {
+    font-size: 1.125rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .text-subheading {
+    font-size: 1.25rem;
+  }
+}
+
+.text-body {
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
+@media (min-width: 768px) {
+  .text-body {
+    font-size: 0.9375rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .text-body {
+    font-size: 1rem;
+  }
+}
+
+.text-caption {
+  font-size: 0.75rem;
+  color: var(--text-tertiary);
+  line-height: 1.4;
+}
+
+@media (min-width: 768px) {
+  .text-caption {
+    font-size: 0.8125rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .text-caption {
+    font-size: 0.875rem;
+  }
+}
+
+/* Animations */
+.fade-enter-active, .fade-leave-active {
+  transition: opacity 0.3s ease;
+}
+.fade-enter-from, .fade-leave-to {
+  opacity: 0;
+}
+
+.slide-up-enter-active, .slide-up-leave-active {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.slide-up-enter-from, .slide-up-leave-to {
+  opacity: 0;
+  transform: translateY(20px);
+}
+
+/* Safe area support */
+@supports (padding: max(0px)) {
+  .safe-top {
+    padding-top: max(20px, env(safe-area-inset-top));
+  }
+  
+  .safe-bottom {
+    padding-bottom: max(20px, env(safe-area-inset-bottom));
+  }
+}
+
+/* Custom scrollbar for mobile */
+::-webkit-scrollbar {
+  width: 0px;
+  background: transparent;
+}
+
+/* Loading states */
+.skeleton {
+  background: linear-gradient(90deg, var(--bg-tertiary) 25%, var(--border-color) 50%, var(--bg-tertiary) 75%);
+  background-size: 200% 100%;
+  animation: skeleton-loading 1.5s infinite ease-in-out;
+}
+
+@keyframes skeleton-loading {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* Dropdown fixes for mobile */
+[data-headlessui-portal] {
+  z-index: 9999 !important;
+}
+
+/* Ensure dropdowns appear above bottom navigation */
+.dropdown-menu {
+  z-index: 60;
+}
+
+/* Golden ratio responsive grid system */
+.desktop-layout {
+  display: block;
+}
+
+@media (min-width: 768px) {
+  .desktop-layout {
+    display: grid;
+    grid-template-columns: 1.618fr 1fr; /* Golden ratio: 1.618:1 */
+    gap: 2rem;
+    align-items: start;
+  }
+}
+
+@media (min-width: 1024px) {
+  .desktop-layout {
+    gap: 3rem;
+  }
+}
+
+/* Responsive main content area */
+.main-content {
+  padding: 1.5rem;
+  padding-bottom: 6rem; /* Space for bottom nav */
+}
+
+@media (min-width: 768px) {
+  .main-content {
+    padding: 2rem 0;
+    padding-bottom: 2rem; /* No bottom nav on larger screens */
+  }
+}
+
+/* Responsive header */
+.app-header {
+  padding: 1rem 1.5rem;
+}
+
+@media (min-width: 768px) {
+  .app-header {
+    padding: 1.5rem 0;
+  }
+}
+
+@media (min-width: 1024px) {
+  .app-header {
+    padding: 2rem 0;
+  }
+}
+
+/* Left column (Media player) */
+.media-column {
+  display: flex;
+  flex-direction: column;
+}
+
+/* Right column (Controls & History) */
+.controls-column {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+@media (min-width: 768px) {
+  .controls-column {
+    gap: 1.5rem;
+  }
+}
+
+/* Responsive spacing utilities */
+.responsive-mb-8 {
+  margin-bottom: 2rem;
+}
+
+@media (min-width: 768px) {
+  .responsive-mb-8 {
+    margin-bottom: 0; /* Remove bottom margin in grid layout */
+  }
+}
+
+/* Hide bottom nav on larger screens */
+@media (min-width: 768px) {
+  .bottom-nav {
+    display: none;
+  }
+}
+
+/* Responsive card sizing */
+@media (min-width: 768px) {
+  .modern-card-elevated {
+    padding: 2rem;
+  }
+  
+  .modern-card {
+    padding: 1.5rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .modern-card-elevated {
+    padding: 2.5rem;
+  }
+}
