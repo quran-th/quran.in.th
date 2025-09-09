@@ -1,26 +1,48 @@
 <template>
-  <div class="reciter-info-card">
-    <div class="modern-card reciter-card">
-      <div class="reciter-info-compact">
+  <div class="w-full">
+    <div
+      class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden transition-all duration-300 hover:shadow-lg hover:-translate-y-0.5 p-4 md:p-5 lg:p-6"
+    >
+      <div class="flex flex-col gap-3">
         <!-- Arabic Reciter -->
-        <div class="info-row">
-          <div class="info-icon reciter-icon-bg">
-            <UIcon name="i-heroicons-user" class="icon-small" />
+        <div class="flex items-center gap-3">
+          <div
+            class="w-7 h-7 md:w-8 md:h-8 rounded-full flex items-center justify-center flex-shrink-0 bg-blue-500 text-white"
+          >
+            <UIcon name="i-heroicons-user" class="w-4 h-4 md:w-4 md:h-4" />
           </div>
-          <div class="info-content">
-            <p class="text-caption status-label">กอรีย์</p>
-            <p class="reciter-name">{{ reciterName }}</p>
+          <div class="flex-1 min-w-0">
+            <p
+              class="text-xs md:text-sm font-medium text-slate-600 dark:text-slate-300 mb-0.5"
+            >
+              กอรีย์
+            </p>
+            <p
+              class="text-sm md:text-base font-semibold text-slate-900 dark:text-slate-100 m-0 leading-tight"
+            >
+              {{ reciterName }}
+            </p>
           </div>
         </div>
 
         <!-- Thai Translator -->
-        <div class="info-row">
-          <div class="info-icon translator-icon-bg">
-            <UIcon name="i-heroicons-language" class="icon-small" />
+        <div class="flex items-center gap-3">
+          <div
+            class="w-7 h-7 md:w-8 md:h-8 rounded-full flex items-center justify-center flex-shrink-0 bg-amber-500 text-white"
+          >
+            <UIcon name="i-heroicons-language" class="w-4 h-4 md:w-4 md:h-4" />
           </div>
-          <div class="info-content">
-            <p class="text-caption status-label">ภาษาไทยโดย</p>
-            <p class="reciter-name">{{ translatorName }}</p>
+          <div class="flex-1 min-w-0">
+            <p
+              class="text-xs md:text-sm font-medium text-slate-600 dark:text-slate-300 mb-0.5"
+            >
+              ภาษาไทยโดย
+            </p>
+            <p
+              class="text-sm md:text-base font-semibold text-slate-900 dark:text-slate-100 m-0 leading-tight"
+            >
+              {{ translatorName }}
+            </p>
           </div>
         </div>
       </div>
@@ -40,106 +62,4 @@ const props = withDefaults(defineProps<Props>(), {
 });
 </script>
 
-<style scoped>
-.reciter-info-card {
-  width: 100%;
-}
-
-.reciter-card {
-  padding: 1rem;
-}
-
-.reciter-info-compact {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-}
-
-.info-row {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-}
-
-.info-icon {
-  width: 1.75rem;
-  height: 1.75rem;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-}
-
-.icon-small {
-  width: 1rem;
-  height: 1rem;
-}
-
-.reciter-icon-bg {
-  background: var(--accent-primary);
-  color: white;
-}
-
-.translator-icon-bg {
-  background: #f59e0b;
-  color: white;
-}
-
-.info-content {
-  flex: 1;
-  min-width: 0;
-}
-
-.status-label {
-  font-weight: 500;
-  color: var(--text-secondary);
-  margin: 0 0 0.125rem 0;
-  font-size: 0.75rem;
-}
-
-.reciter-name {
-  font-weight: 600;
-  color: var(--text-primary);
-  font-size: 0.9375rem;
-  margin: 0;
-  line-height: 1.2;
-}
-
-/* Responsive adjustments */
-@media (max-width: 640px) {
-  .reciter-card {
-    padding: 0.875rem;
-  }
-
-  .reciter-name {
-    font-size: 0.875rem;
-  }
-
-  .info-icon {
-    width: 1.5rem;
-    height: 1.5rem;
-  }
-
-  .icon-small {
-    width: 0.875rem;
-    height: 0.875rem;
-  }
-}
-
-@media (min-width: 768px) {
-  .reciter-card {
-    padding: 1.25rem;
-  }
-
-  .reciter-name {
-    font-size: 1rem;
-  }
-}
-
-@media (min-width: 1024px) {
-  .reciter-card {
-    padding: 1.5rem;
-  }
-}
-</style>
+<!-- Styles moved to Tailwind utilities in template -->

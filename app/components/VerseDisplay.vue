@@ -1,5 +1,5 @@
 <template>
-  <div class="verse-display space-y-4 mb-8">
+  <div class="w-full space-y-4 mb-8">
     <!-- Status -->
     <div class="flex items-center justify-between">
       <div>
@@ -88,9 +88,4 @@ interface Props {
 defineProps<Props>();
 </script>
 
-<style scoped>
-/* Simple, clean styles */
-.verse-display {
-  width: 100%;
-}
-</style>
+<!-- Styles moved to Tailwind utilities in template -->
