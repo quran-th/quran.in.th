@@ -1,0 +1,19 @@
+{
+  "name": "อัลกุรอาน - Quran Player",
+  "short_name": "อัลกุรอาน",
+  "description": "สัมผัสกับอัลกุรอานที่สูงส่งพร้อมการอ่านที่ไพเราะและคำแปล",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#3b82f6",
+  "lang": "th",
+  "orientation": "portrait-primary",
+  "categories": ["music", "audio", "religion"],
+  "icons": [
+    {
+      "src": "/favicon.ico",
+      "sizes": "48x48",
+      "type": "image/x-icon"
+    }
+  ]
+}
