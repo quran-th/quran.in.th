@@ -10,30 +10,36 @@ export const useSurahs = () => {
       isLoading.value = true
       error.value = null
       
-      // Import the surahs text data and parse it
-      const surahText = await import('~/surah.txt?raw')
-      const lines = surahText.default.split('\n').filter(line => line.trim())
+      // Load audio metadata as primary source
+      const audioMetadataModule = await import('~/data/audioMetadata.json')
+      const audioMetadata = audioMetadataModule.default || audioMetadataModule
       
-      surahsData.value = lines.map((line: string) => {
-        const match = line.match(/^(\d+)-\s*(.+)$/)
-        if (!match) {
-          throw new Error(`Invalid surah format: ${line}`)
-        }
+      // Convert metadata object to array of surahs
+      surahsData.value = Object.entries(audioMetadata)
+        .map(([id, data]: [string, any]) => {
+          const surahId = parseInt(id)
+          
+          return {
+            id: surahId,
+            name: data.name_th || `Surah ${surahId}`,
+            thaiName: data.name_th || `Surah ${surahId}`,
+            arabicName: data.name_th || `Surah ${surahId}`, // Thai transliteration serves as both
+            englishName: data.name_en || getEnglishSurahName(surahId),
+            revelationType: getSurahRevelationType(surahId),
+            versesCount: data.verses_count || getSurahVersesCount(surahId),
+            order: surahId,
+            // Audio metadata
+            duration: data.duration,
+            fileSize: data.file_size,
+            bitRate: data.bit_rate,
+            format: data.format,
+            codec: data.codec,
+            originalFilename: data.original_filename,
+            newFilename: data.new_filename
+          }
+        })
+        .sort((a, b) => a.id - b.id) // Sort by surah ID
         
-        const [, numberStr, name] = match
-        const id = parseInt(numberStr)
-        
-        return {
-          id,
-          name: name.trim(),
-          thaiName: name.trim(), // Primary Thai name
-          arabicName: name.trim(), // Thai transliteration serves as both
-          englishName: getEnglishSurahName(id),
-          revelationType: getSurahRevelationType(id),
-          versesCount: getSurahVersesCount(id),
-          order: id
-        }
-      })
     } catch (err) {
       error.value = 'Failed to load surahs data'
       console.error('Error loading surahs:', err)
@@ -46,7 +52,26 @@ export const useSurahs = () => {
     return surahsData.value.find(s => s.id === id)
   }
 
-  // Removed unused getSurahOptions function
+  const formatDuration = (seconds: number): string => {
+    if (!seconds) return '0:00'
+    
+    const hours = Math.floor(seconds / 3600)
+    const minutes = Math.floor((seconds % 3600) / 60)
+    const secs = Math.floor(seconds % 60)
+    
+    if (hours > 0) {
+      return `${hours}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`
+    }
+    return `${minutes}:${secs.toString().padStart(2, '0')}`
+  }
+
+  const formatFileSize = (bytes: number): string => {
+    if (!bytes) return '0 B'
+    
+    const sizes = ['B', 'KB', 'MB', 'GB']
+    const i = Math.floor(Math.log(bytes) / Math.log(1024))
+    return `${(bytes / Math.pow(1024, i)).toFixed(1)} ${sizes[i]}`
+  }
 
   // Helper functions for surah metadata
   const getEnglishSurahName = (id: number): string => {
@@ -103,7 +128,7 @@ export const useSurahs = () => {
   }
 
   // Load data on composable initialization
-  if (process.client) {
+  if (import.meta.client) {
     loadSurahs()
   }
 
@@ -112,6 +137,8 @@ export const useSurahs = () => {
     isLoading: readonly(isLoading),
     error: readonly(error),
     loadSurahs,
-    getSurahById
+    getSurahById,
+    formatDuration,
+    formatFileSize
   }
 }

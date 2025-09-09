@@ -1,4 +1,4 @@
-import type { AudioPlayerState, AudioFile, VerseTiming } from '~/types/quran'
+import type { AudioPlayerState, VerseTiming } from '~/types/quran'
 import { audioService } from '~/services/audioService'
 
 export const useAudioPlayer = () => {
@@ -56,7 +56,7 @@ export const useAudioPlayer = () => {
 
   // Initialize audio element
   const initAudio = () => {
-    if (!process.client || state.audioElement) return
+    if (!import.meta.client || state.audioElement) return
 
     const audio = new Audio()
     audio.preload = 'metadata'
@@ -106,7 +106,7 @@ export const useAudioPlayer = () => {
 
   // Initialize MediaSession API for background audio and OS integration
   const initMediaSession = () => {
-    if (!process.client || !('mediaSession' in navigator)) return
+    if (!import.meta.client || !('mediaSession' in navigator)) return
 
     // Set up media action handlers for lock screen controls
     navigator.mediaSession.setActionHandler('play', () => {
@@ -137,8 +137,8 @@ export const useAudioPlayer = () => {
   }
 
   // Update MediaSession metadata with current Surah and reciter info
-  const updateMediaSessionMetadata = (surahName: string, reciterName: string, surahId: number) => {
-    if (!process.client || !('mediaSession' in navigator)) return
+  const updateMediaSessionMetadata = (surahName: string, reciterName: string, _surahId: number) => {
+    if (!import.meta.client || !('mediaSession' in navigator)) return
 
     navigator.mediaSession.metadata = new MediaMetadata({
       title: surahName,
@@ -159,7 +159,7 @@ export const useAudioPlayer = () => {
 
   // Update MediaSession position state for progress tracking
   const updateMediaSessionPositionState = () => {
-    if (!process.client || !('mediaSession' in navigator) || !state.audioElement) return
+    if (!import.meta.client || !('mediaSession' in navigator) || !state.audioElement) return
 
     try {
       navigator.mediaSession.setPositionState({
@@ -231,7 +231,7 @@ export const useAudioPlayer = () => {
       state.isPlaying = true
       
       // Update MediaSession playback state
-      if (process.client && 'mediaSession' in navigator) {
+      if (import.meta.client && 'mediaSession' in navigator) {
         navigator.mediaSession.playbackState = 'playing'
         updateMediaSessionPositionState()
       }
@@ -248,7 +248,7 @@ export const useAudioPlayer = () => {
     state.isPlaying = false
     
     // Update MediaSession playback state
-    if (process.client && 'mediaSession' in navigator) {
+    if (import.meta.client && 'mediaSession' in navigator) {
       navigator.mediaSession.playbackState = 'paused'
     }
   }
@@ -401,7 +401,7 @@ export const useAudioPlayer = () => {
 
   // Initialize on client
   onMounted(() => {
-    if (process.client) {
+    if (import.meta.client) {
       initAudio()
     }
   })

@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-This is a Nuxt.js 4 application named "quran-th" configured for deployment to Cloudflare Workers. The project uses Vue 3 with TypeScript, Nuxt UI for components, and is set up for edge runtime deployment.
+This is a Nuxt.js 4 application named "quran-th" - a responsive Quran audio player application with Thai language support. The project features mobile and desktop layouts, audio streaming capabilities, and is configured for deployment to Cloudflare Workers. Built with Vue 3, TypeScript, Nuxt UI, and optimized for edge runtime deployment.
 
 ## Development Commands
 
@@ -46,11 +46,14 @@ Generates TypeScript types for Cloudflare Workers
 
 ## Architecture
 
-- **Framework:** Nuxt 4 with Vue 3
+- **Framework:** Nuxt 4 with Vue 3 Composition API
 - **UI Components:** Nuxt UI (@nuxt/ui) - Tailwind CSS-based component library
+- **Audio System:** Custom composables for audio playback and Media Session API
+- **Data Layer:** TypeScript interfaces for Quran data (surahs, reciters)
+- **Responsive Design:** Mobile-first with circular player and desktop table layouts
 - **Code Quality:** ESLint with Nuxt configuration (@nuxt/eslint)
 - **Runtime:** Cloudflare Workers (edge runtime)
-- **TypeScript:** Configured with project references to .nuxt generated configs
+- **TypeScript:** Comprehensive type safety with custom Quran interfaces
 - **Deployment:** Cloudflare Workers via Wrangler
 
 ### Key Configuration Files
@@ -62,8 +65,19 @@ Generates TypeScript types for Cloudflare Workers
 
 ### Directory Structure
 
-- `app/`: Main application code (currently contains minimal app.vue)
-- `public/`: Static assets (favicon, robots.txt)
+- `app/`: Main application code
+  - `pages/index.vue`: Main responsive page with mobile/desktop layouts
+  - `composables/`: Audio player, reciters, and surahs composables
+  - `services/`: Audio service for CDN integration
+  - `types/`: TypeScript interfaces for Quran data
+  - `data/`: Audio metadata and configuration
+  - `server/api/`: Server-side API endpoints
+- `public/`: Static assets
+  - `audio/`: Sample audio files
+  - `bg.webp`: Hero section background image
+  - `fonts/`: Thai font files
+  - `manifest.json`: PWA configuration
+- `claudedocs/`: Implementation documentation and guides
 - `.output/`: Build output directory (auto-generated)
 - `.nuxt/`: Nuxt build cache and generated files
 
@@ -75,10 +89,24 @@ The app is configured for Cloudflare Workers deployment with:
 - Observability enabled
 - Node.js compatibility enabled
 
-### Notes
+### Application Features
 
-- Project uses `nitro-cloudflare-dev` module for local Cloudflare Workers development
-- Nuxt UI provides ready-to-use Tailwind CSS components with accessibility built-in
+- **Responsive Design**: Mobile circular player and desktop playlist layout
+- **Audio Streaming**: Integration with Quran audio CDN services
+- **Media Session API**: Native audio controls and background playbook
+- **Progressive Web App**: Offline-first with service worker support
+- **Thai Language**: Full Thai language support with custom fonts
+- **Dark Mode**: Complete dark/light theme switching
+- **Surah Selection**: Slide-up modal for mobile surah browsing
+- **Real-time Progress**: Live audio progress tracking and seeking
+
+### Development Notes
+
+- Uses Composition API pattern throughout the application
+- Audio state managed via `useAudioPlayer` composable
+- Responsive breakpoints at 768px (mobile/desktop)
+- Background image optimization with WebP format
+- CDN integration for audio file streaming
+- TypeScript strict mode for type safety
 - ESLint configured for code quality and consistency
-- Uses UApp component wrapper for Nuxt UI functionality
-- Currently a minimal setup ready for component development
+- Nuxt UI components with Tailwind CSS for styling

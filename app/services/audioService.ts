@@ -1,4 +1,4 @@
-import type { AudioFile, AudioResponse, CachedAudio } from '~/types/quran'
+import type { AudioFile, CachedAudio } from '~/types/quran'
 
 export class AudioService {
   private dbName = 'QuranAudioCache'
@@ -13,7 +13,8 @@ export class AudioService {
   }
 
   private async initDB(): Promise<void> {
-    if (!process.client) return
+    // if not running in client, skip
+    if (!import.meta.client) return
 
     return new Promise((resolve, reject) => {
       const request = indexedDB.open(this.dbName, this.dbVersion)
@@ -49,6 +50,7 @@ export class AudioService {
         file_size: 0, // Will be determined when loading
         format: 'mp3',
         audio_url: audioUrl,
+        duration: 0, // Set to 0 or fetch actual duration if available
         verse_timings: [] // No verse timings for local files initially
       }
       
@@ -60,7 +62,7 @@ export class AudioService {
   }
 
   async getCachedAudio(surahId: number, reciterId: number): Promise<CachedAudio | null> {
-    if (!this.db || !process.client) return null
+    if (!this.db || !import.meta.client) return null
 
     return new Promise((resolve, reject) => {
       const transaction = this.db!.transaction([this.storeName], 'readonly')
@@ -83,7 +85,7 @@ export class AudioService {
   }
 
   async cacheAudio(surahId: number, reciterId: number, audioFile: AudioFile): Promise<void> {
-    if (!this.db || !process.client) return
+    if (!this.db || !import.meta.client) return
 
     try {
       // Check if we need to clean up cache first
@@ -123,10 +125,24 @@ export class AudioService {
     }
   }
 
-  async getAudioUrl(surahId: number, reciterId: number): Promise<string> {
+  async getAudioUrl(surahId: number, _reciterId: number): Promise<string> {
     // For local files, return direct URL to static audio file with 3-digit padding
     const paddedId = surahId.toString().padStart(3, '0')
-    return `/audio/${paddedId}.mp3`
+    const localUrl = `/audio/${paddedId}.mp3`
+    
+    // Check if local file exists (optional validation)
+    if (import.meta.client) {
+      try {
+        const response = await fetch(localUrl, { method: 'HEAD' })
+        if (!response.ok) {
+          console.warn(`Audio file not found: ${localUrl} (this is expected in development)`)
+        }
+      } catch (error) {
+        console.warn(`Could not check audio file: ${localUrl}`)
+      }
+    }
+    
+    return localUrl
   }
 
   private async updateLastAccessed(id: string): Promise<void> {

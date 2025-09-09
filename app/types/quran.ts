@@ -17,6 +17,14 @@ export interface Surah {
   revelationType: 'Meccan' | 'Medinan'
   versesCount: number
   order: number
+  // Audio metadata
+  duration?: number
+  fileSize?: number
+  bitRate?: number
+  format?: string
+  codec?: string
+  originalFilename?: string
+  newFilename?: string
 }
 
 export interface AudioFile {
@@ -57,6 +65,7 @@ export interface AudioPlayerState {
 }
 
 export interface CachedAudio {
+  id: string
   surahId: number
   reciterId: number
   audioUrl: string
