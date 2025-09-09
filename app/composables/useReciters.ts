@@ -35,13 +35,7 @@ export const useReciters = () => {
     return recitersData.value.find(r => r.reciter_id === reciterId)
   }
 
-  const getReciterOptions = () => {
-    return recitersData.value.map(reciter => ({
-      value: reciter.reciter_id,
-      label: reciter.name,
-      description: `${reciter.style} • ${reciter.qirat}`
-    }))
-  }
+  // Removed unused getReciterOptions function
 
   // Load data on composable initialization
   if (process.client) {
@@ -53,7 +47,6 @@ export const useReciters = () => {
     isLoading: readonly(isLoading),
     error: readonly(error),
     loadReciters,
-    getReciterById,
-    getReciterOptions
+    getReciterById
   }
 }

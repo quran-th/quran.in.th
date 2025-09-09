@@ -46,13 +46,7 @@ export const useSurahs = () => {
     return surahsData.value.find(s => s.id === id)
   }
 
-  const getSurahOptions = () => {
-    return surahsData.value.map(surah => ({
-      value: surah.id,
-      label: `${surah.id}. ${surah.thaiName}`,
-      description: `${surah.versesCount} อายะฮฺ • ${surah.revelationType === 'Meccan' ? 'มักกะฮฺ' : 'มะดีนะฮฺ'}`
-    }))
-  }
+  // Removed unused getSurahOptions function
 
   // Helper functions for surah metadata
   const getEnglishSurahName = (id: number): string => {
@@ -118,7 +112,6 @@ export const useSurahs = () => {
     isLoading: readonly(isLoading),
     error: readonly(error),
     loadSurahs,
-    getSurahById,
-    getSurahOptions
+    getSurahById
   }
 }
