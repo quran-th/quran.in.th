@@ -1,148 +1,148 @@
 @import "tailwindcss";
 @import "@nuxt/ui";
 @import "./arabic.css";
-@import url('https://fonts.googleapis.com/css2?family=Amiri:ital,wght@0,400;0,700;1,400;1,700&display=swap');
+@import url("https://fonts.googleapis.com/css2?family=Amiri:ital,wght@0,400;0,700;1,400;1,700&display=swap");
 
 /* Inter Font Family with Thai Character Support */
 @font-face {
-  font-family: 'Inter';
-  src: url('/fonts/InterThaiLoopless-Thin.ttf') format('truetype');
+  font-family: "Inter";
+  src: url("/fonts/InterThaiLoopless-Thin.ttf") format("truetype");
   font-weight: 100;
   font-style: normal;
   font-display: swap;
 }
 
 @font-face {
-  font-family: 'Inter';
-  src: url('/fonts/InterThaiLoopless-ThinItalic.ttf') format('truetype');
+  font-family: "Inter";
+  src: url("/fonts/InterThaiLoopless-ThinItalic.ttf") format("truetype");
   font-weight: 100;
   font-style: italic;
   font-display: swap;
 }
 
 @font-face {
-  font-family: 'Inter';
-  src: url('/fonts/InterThaiLoopless-ExtraLight.ttf') format('truetype');
+  font-family: "Inter";
+  src: url("/fonts/InterThaiLoopless-ExtraLight.ttf") format("truetype");
   font-weight: 200;
   font-style: normal;
   font-display: swap;
 }
 
 @font-face {
-  font-family: 'Inter';
-  src: url('/fonts/InterThaiLoopless-ExtraLightItalic.ttf') format('truetype');
+  font-family: "Inter";
+  src: url("/fonts/InterThaiLoopless-ExtraLightItalic.ttf") format("truetype");
   font-weight: 200;
   font-style: italic;
   font-display: swap;
 }
 
 @font-face {
-  font-family: 'Inter';
-  src: url('/fonts/InterThaiLoopless-Light.ttf') format('truetype');
+  font-family: "Inter";
+  src: url("/fonts/InterThaiLoopless-Light.ttf") format("truetype");
   font-weight: 300;
   font-style: normal;
   font-display: swap;
 }
 
 @font-face {
-  font-family: 'Inter';
-  src: url('/fonts/InterThaiLoopless-LightItalic.ttf') format('truetype');
+  font-family: "Inter";
+  src: url("/fonts/InterThaiLoopless-LightItalic.ttf") format("truetype");
   font-weight: 300;
   font-style: italic;
   font-display: swap;
 }
 
 @font-face {
-  font-family: 'Inter';
-  src: url('/fonts/InterThaiLoopless-Regular.ttf') format('truetype');
+  font-family: "Inter";
+  src: url("/fonts/InterThaiLoopless-Regular.ttf") format("truetype");
   font-weight: 400;
   font-style: normal;
   font-display: swap;
 }
 
 @font-face {
-  font-family: 'Inter';
-  src: url('/fonts/InterThaiLoopless-Italic.ttf') format('truetype');
+  font-family: "Inter";
+  src: url("/fonts/InterThaiLoopless-Italic.ttf") format("truetype");
   font-weight: 400;
   font-style: italic;
   font-display: swap;
 }
 
 @font-face {
-  font-family: 'Inter';
-  src: url('/fonts/InterThaiLoopless-Medium.ttf') format('truetype');
+  font-family: "Inter";
+  src: url("/fonts/InterThaiLoopless-Medium.ttf") format("truetype");
   font-weight: 500;
   font-style: normal;
   font-display: swap;
 }
 
 @font-face {
-  font-family: 'Inter';
-  src: url('/fonts/InterThaiLoopless-MediumItalic.ttf') format('truetype');
+  font-family: "Inter";
+  src: url("/fonts/InterThaiLoopless-MediumItalic.ttf") format("truetype");
   font-weight: 500;
   font-style: italic;
   font-display: swap;
 }
 
 @font-face {
-  font-family: 'Inter';
-  src: url('/fonts/InterThaiLoopless-SemiBold.ttf') format('truetype');
+  font-family: "Inter";
+  src: url("/fonts/InterThaiLoopless-SemiBold.ttf") format("truetype");
   font-weight: 600;
   font-style: normal;
   font-display: swap;
 }
 
 @font-face {
-  font-family: 'Inter';
-  src: url('/fonts/InterThaiLoopless-SemiBoldItalic.ttf') format('truetype');
+  font-family: "Inter";
+  src: url("/fonts/InterThaiLoopless-SemiBoldItalic.ttf") format("truetype");
   font-weight: 600;
   font-style: italic;
   font-display: swap;
 }
 
 @font-face {
-  font-family: 'Inter';
-  src: url('/fonts/InterThaiLoopless-Bold.ttf') format('truetype');
+  font-family: "Inter";
+  src: url("/fonts/InterThaiLoopless-Bold.ttf") format("truetype");
   font-weight: 700;
   font-style: normal;
   font-display: swap;
 }
 
 @font-face {
-  font-family: 'Inter';
-  src: url('/fonts/InterThaiLoopless-BoldItalic.ttf') format('truetype');
+  font-family: "Inter";
+  src: url("/fonts/InterThaiLoopless-BoldItalic.ttf") format("truetype");
   font-weight: 700;
   font-style: italic;
   font-display: swap;
 }
 
 @font-face {
-  font-family: 'Inter';
-  src: url('/fonts/InterThaiLoopless-ExtraBold.ttf') format('truetype');
+  font-family: "Inter";
+  src: url("/fonts/InterThaiLoopless-ExtraBold.ttf") format("truetype");
   font-weight: 800;
   font-style: normal;
   font-display: swap;
 }
 
 @font-face {
-  font-family: 'Inter';
-  src: url('/fonts/InterThaiLoopless-ExtraBoldItalic.ttf') format('truetype');
+  font-family: "Inter";
+  src: url("/fonts/InterThaiLoopless-ExtraBoldItalic.ttf") format("truetype");
   font-weight: 800;
   font-style: italic;
   font-display: swap;
 }
 
 @font-face {
-  font-family: 'Inter';
-  src: url('/fonts/InterThaiLoopless-Black.ttf') format('truetype');
+  font-family: "Inter";
+  src: url("/fonts/InterThaiLoopless-Black.ttf") format("truetype");
   font-weight: 900;
   font-style: normal;
   font-display: swap;
 }
 
 @font-face {
-  font-family: 'Inter';
-  src: url('/fonts/InterThaiLoopless-BlackItalic.ttf') format('truetype');
+  font-family: "Inter";
+  src: url("/fonts/InterThaiLoopless-BlackItalic.ttf") format("truetype");
   font-weight: 900;
   font-style: italic;
   font-display: swap;
@@ -150,11 +150,28 @@
 
 /* Global font application */
 * {
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  font-family:
+    "Inter",
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    Roboto,
+    "Helvetica Neue",
+    Arial,
+    sans-serif;
 }
 
-html, body {
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+html,
+body {
+  font-family:
+    "Inter",
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    Roboto,
+    "Helvetica Neue",
+    Arial,
+    sans-serif;
   margin: 0;
   padding: 0;
   height: 100vh;
@@ -171,8 +188,10 @@ html, body {
   --text-secondary: #475569;
   --text-tertiary: #94a3b8;
   --border-color: #e2e8f0;
-  --card-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
-  --card-shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  --card-shadow:
+    0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+  --card-shadow-lg:
+    0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
   --accent-primary: #3b82f6;
   --accent-secondary: #8b5cf6;
 }
@@ -187,54 +206,18 @@ html, body {
   --text-tertiary: #64748b;
   --border-color: #334155;
   --card-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.3), 0 1px 2px 0 rgba(0, 0, 0, 0.2);
-  --card-shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.3), 0 4px 6px -2px rgba(0, 0, 0, 0.2);
+  --card-shadow-lg:
+    0 10px 15px -3px rgba(0, 0, 0, 0.3), 0 4px 6px -2px rgba(0, 0, 0, 0.2);
   --accent-primary: #60a5fa;
   --accent-secondary: #a78bfa;
 }
 
-/* Responsive app container */
-.app-container {
-  min-height: 100vh;
-  background: var(--bg-primary);
-  position: relative;
-  width: 100%;
-}
-
-/* Mobile-first responsive breakpoints */
-@media (max-width: 767px) {
-  .app-container {
-    max-width: 430px;
-    margin: 0 auto;
-    box-shadow: 0 0 50px rgba(0, 0, 0, 0.1);
-  }
-}
-
-@media (min-width: 768px) {
-  .app-container {
-    max-width: 768px;
-    margin: 0 auto;
-    padding: 0 1.5rem;
-  }
-}
-
-@media (min-width: 1024px) {
-  .app-container {
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 0 2rem;
-  }
-}
-
-@media (min-width: 1400px) {
-  .app-container {
-    max-width: 1400px;
-    padding: 0 3rem;
-  }
-}
+/* Responsive app container - using Tailwind utilities in templates */
+/* Container styles moved to Tailwind classes */
 
 /* Responsive Arabic text styling */
 .arabic-text {
-  font-family: 'Amiri', 'Scheherazade New', 'Times New Roman', serif;
+  font-family: "Amiri", "Scheherazade New", "Times New Roman", serif;
   font-size: 1.5rem;
   line-height: 2.2;
   font-weight: 400;
@@ -268,27 +251,11 @@ html, body {
   direction: rtl;
 }
 
-/* Modern card system */
-.modern-card {
-  background: var(--bg-secondary);
-  border-radius: 20px;
-  box-shadow: var(--card-shadow);
-  border: 1px solid var(--border-color);
-  overflow: hidden;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.modern-card:hover {
-  box-shadow: var(--card-shadow-lg);
-  transform: translateY(-2px);
-}
-
-.modern-card-elevated {
-  background: var(--bg-secondary);
-  border-radius: 24px;
-  box-shadow: var(--card-shadow-lg);
-  border: 1px solid var(--border-color);
-}
+/* Modern card system - using Tailwind utilities */
+/* Card styles moved to Tailwind classes: */
+/* .modern-card → bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden transition-all duration-300 */
+/* .modern-card:hover → hover:shadow-lg hover:-translate-y-0.5 */
+/* .modern-card-elevated → bg-white dark:bg-slate-800 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700 */
 
 /* Hero sections with gradients */
 .hero-gradient {
@@ -302,177 +269,39 @@ html, body {
   background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
 }
 
-/* Responsive player controls */
-.player-control {
-  width: 56px;
-  height: 56px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: var(--bg-secondary);
-  box-shadow: var(--card-shadow);
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-  color: var(--text-primary);
-}
+/* Player controls - using Tailwind utilities */
+/* .player-control → w-14 h-14 md:w-15 md:h-15 lg:w-16 lg:h-16 rounded-full flex items-center justify-center bg-white dark:bg-slate-800 shadow-sm transition-all duration-200 text-slate-900 dark:text-slate-100 hover:-translate-y-px hover:shadow-lg */
+/* .player-control-primary → w-18 h-18 md:w-20 md:h-20 lg:w-22 lg:h-22 rounded-full flex items-center justify-center bg-blue-500 text-white shadow-sm transition-all duration-200 hover:-translate-y-px hover:shadow-lg */
 
-@media (min-width: 768px) {
-  .player-control {
-    width: 60px;
-    height: 60px;
-  }
-}
+/* Progress bars and sliders - using Tailwind utilities */
+/* .modern-slider → h-1 bg-gray-200 dark:bg-gray-600 rounded-sm relative overflow-hidden cursor-pointer */
+/* .modern-slider-progress → h-full bg-blue-500 rounded-sm transition-all duration-100 ease-in */
 
-@media (min-width: 1024px) {
-  .player-control {
-    width: 64px;
-    height: 64px;
-  }
-}
+/* Bottom navigation - using Tailwind utilities */
+/* .bottom-nav → fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[430px] bg-white dark:bg-slate-800 border-t border-gray-200 dark:border-gray-700 z-50 pb-safe-area-inset-bottom */
 
-.player-control:hover {
-  transform: translateY(-1px);
-  box-shadow: var(--card-shadow-lg);
-}
-
-.player-control-primary {
-  width: 72px;
-  height: 72px;
-  background: var(--accent-primary);
-  color: white;
-}
-
-@media (min-width: 768px) {
-  .player-control-primary {
-    width: 80px;
-    height: 80px;
-  }
-}
-
-@media (min-width: 1024px) {
-  .player-control-primary {
-    width: 88px;
-    height: 88px;
-  }
-}
-
-/* Progress bars and sliders */
-.modern-slider {
-  height: 4px;
-  background: var(--bg-tertiary);
-  border-radius: 2px;
-  position: relative;
-  overflow: hidden;
-}
-
-.modern-slider-progress {
-  height: 100%;
-  background: var(--accent-primary);
-  border-radius: 2px;
-  transition: width 0.1s ease;
-}
-
-/* Bottom navigation */
-.bottom-nav {
-  position: fixed;
-  bottom: 0;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 100%;
-  max-width: 430px;
-  background: var(--bg-secondary);
-  border-top: 1px solid var(--border-color);
-  padding: 12px 0 env(safe-area-inset-bottom);
-  z-index: 50;
-}
-
-/* Responsive typography scale */
-.text-heading {
-  font-size: 1.5rem;
-  font-weight: 700;
-  color: var(--text-primary);
-  line-height: 1.3;
-}
-
-@media (min-width: 768px) {
-  .text-heading {
-    font-size: 1.75rem;
-  }
-}
-
-@media (min-width: 1024px) {
-  .text-heading {
-    font-size: 2rem;
-  }
-}
-
-.text-subheading {
-  font-size: 1rem;
-  font-weight: 500;
-  color: var(--text-secondary);
-  line-height: 1.4;
-}
-
-@media (min-width: 768px) {
-  .text-subheading {
-    font-size: 1.125rem;
-  }
-}
-
-@media (min-width: 1024px) {
-  .text-subheading {
-    font-size: 1.25rem;
-  }
-}
-
-.text-body {
-  font-size: 0.875rem;
-  color: var(--text-secondary);
-  line-height: 1.5;
-}
-
-@media (min-width: 768px) {
-  .text-body {
-    font-size: 0.9375rem;
-  }
-}
-
-@media (min-width: 1024px) {
-  .text-body {
-    font-size: 1rem;
-  }
-}
-
-.text-caption {
-  font-size: 0.75rem;
-  color: var(--text-tertiary);
-  line-height: 1.4;
-}
-
-@media (min-width: 768px) {
-  .text-caption {
-    font-size: 0.8125rem;
-  }
-}
-
-@media (min-width: 1024px) {
-  .text-caption {
-    font-size: 0.875rem;
-  }
-}
+/* Typography - using Tailwind utilities */
+/* .text-heading → text-2xl md:text-3xl lg:text-4xl font-bold text-slate-900 dark:text-slate-100 leading-tight */
+/* .text-subheading → text-base md:text-lg lg:text-xl font-medium text-slate-600 dark:text-slate-300 leading-snug */
+/* .text-body → text-sm md:text-base lg:text-base text-slate-600 dark:text-slate-300 leading-relaxed */
+/* .text-caption → text-xs md:text-sm lg:text-sm text-slate-500 dark:text-slate-400 leading-snug */
 
 /* Animations */
-.fade-enter-active, .fade-leave-active {
+.fade-enter-active,
+.fade-leave-active {
   transition: opacity 0.3s ease;
 }
-.fade-enter-from, .fade-leave-to {
+.fade-enter-from,
+.fade-leave-to {
   opacity: 0;
 }
 
-.slide-up-enter-active, .slide-up-leave-active {
+.slide-up-enter-active,
+.slide-up-leave-active {
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
-.slide-up-enter-from, .slide-up-leave-to {
+.slide-up-enter-from,
+.slide-up-leave-to {
   opacity: 0;
   transform: translateY(20px);
 }
@@ -482,7 +311,7 @@ html, body {
   .safe-top {
     padding-top: max(20px, env(safe-area-inset-top));
   }
-  
+
   .safe-bottom {
     padding-bottom: max(20px, env(safe-area-inset-bottom));
   }
@@ -496,14 +325,23 @@ html, body {
 
 /* Loading states */
 .skeleton {
-  background: linear-gradient(90deg, var(--bg-tertiary) 25%, var(--border-color) 50%, var(--bg-tertiary) 75%);
+  background: linear-gradient(
+    90deg,
+    var(--bg-tertiary) 25%,
+    var(--border-color) 50%,
+    var(--bg-tertiary) 75%
+  );
   background-size: 200% 100%;
   animation: skeleton-loading 1.5s infinite ease-in-out;
 }
 
 @keyframes skeleton-loading {
-  0% { background-position: 200% 0; }
-  100% { background-position: -200% 0; }
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
 }
 
 /* Dropdown fixes for mobile */
@@ -516,55 +354,14 @@ html, body {
   z-index: 60;
 }
 
-/* Golden ratio responsive grid system */
-.desktop-layout {
-  display: block;
-}
+/* Desktop layout - using Tailwind utilities */
+/* .desktop-layout → block md:grid md:grid-cols-[1.618fr_1fr] md:gap-8 lg:gap-12 md:items-start */
 
-@media (min-width: 768px) {
-  .desktop-layout {
-    display: grid;
-    grid-template-columns: 1.618fr 1fr; /* Golden ratio: 1.618:1 */
-    gap: 2rem;
-    align-items: start;
-  }
-}
+/* Main content - using Tailwind utilities */
+/* .main-content → p-6 pb-24 md:p-8 md:pb-8 */
 
-@media (min-width: 1024px) {
-  .desktop-layout {
-    gap: 3rem;
-  }
-}
-
-/* Responsive main content area */
-.main-content {
-  padding: 1.5rem;
-  padding-bottom: 6rem; /* Space for bottom nav */
-}
-
-@media (min-width: 768px) {
-  .main-content {
-    padding: 2rem 0;
-    padding-bottom: 2rem; /* No bottom nav on larger screens */
-  }
-}
-
-/* Responsive header */
-.app-header {
-  padding: 1rem 1.5rem;
-}
-
-@media (min-width: 768px) {
-  .app-header {
-    padding: 1.5rem 0;
-  }
-}
-
-@media (min-width: 1024px) {
-  .app-header {
-    padding: 2rem 0;
-  }
-}
+/* Header - using Tailwind utilities */
+/* .app-header → p-4 px-6 md:p-6 md:px-0 lg:p-8 lg:px-0 */
 
 /* Left column (Media player) */
 .media-column {
@@ -608,7 +405,7 @@ html, body {
   .modern-card-elevated {
     padding: 2rem;
   }
-  
+
   .modern-card {
     padding: 1.5rem;
   }
