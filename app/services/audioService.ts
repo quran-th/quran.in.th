@@ -7,6 +7,14 @@ export class AudioService {
   private db: IDBDatabase | null = null
   private maxCacheSize = 500 * 1024 * 1024 // 500MB max cache
   private maxCachedFiles = 10 // Maximum number of cached audio files
+  
+  // Howler.js streaming optimization settings
+  private streamingConfig = {
+    preloadBuffer: 'metadata' as const, // Only preload metadata for faster startup
+    retryAttempts: 3,
+    retryDelay: 1000, // 1 second base delay
+    chunkSize: 1024 * 1024, // 1MB chunks for progressive loading
+  }
 
   constructor() {
     this.initDB()
@@ -126,23 +134,60 @@ export class AudioService {
   }
 
   async getAudioUrl(surahId: number, _reciterId: number): Promise<string> {
-    // For local files, return direct URL to static audio file with 3-digit padding
-    const paddedId = surahId.toString().padStart(3, '0')
-    const localUrl = `/audio/${paddedId}.mp3`
+    // Return optimized streaming URL for Howler.js
+    // The API endpoint streams audio directly from R2 with proper headers
+    // for progressive loading and byte-range requests
+    const baseUrl = `/api/audio/${surahId}`
     
-    // Check if local file exists (optional validation)
-    if (import.meta.client) {
-      try {
-        const response = await fetch(localUrl, { method: 'HEAD' })
-        if (!response.ok) {
-          console.warn(`Audio file not found: ${localUrl} (this is expected in development)`)
-        }
-      } catch (error) {
-        console.warn(`Could not check audio file: ${localUrl}`)
+    // Add cache-busting parameter to prevent stale cached responses
+    // that might cause audio skipping issues
+    const timestamp = Date.now()
+    return `${baseUrl}?t=${timestamp}`
+  }
+
+  // Get streaming configuration for Howler.js optimization
+  getStreamingConfig() {
+    return { ...this.streamingConfig }
+  }
+
+  // Enhanced audio URL with retry mechanism for failed requests
+  async getAudioUrlWithRetry(surahId: number, reciterId: number, attempt: number = 1): Promise<string> {
+    try {
+      const url = await this.getAudioUrl(surahId, reciterId)
+      
+      // Verify URL is accessible (optional pre-flight check)
+      if (import.meta.client && attempt === 1) {
+        await this.verifyAudioUrl(url)
       }
+      
+      return url
+    } catch (error) {
+      if (attempt < this.streamingConfig.retryAttempts) {
+        console.warn(`Audio URL attempt ${attempt} failed, retrying...`, error)
+        await new Promise(resolve => setTimeout(resolve, this.streamingConfig.retryDelay * attempt))
+        return this.getAudioUrlWithRetry(surahId, reciterId, attempt + 1)
+      }
+      throw error
     }
-    
-    return localUrl
+  }
+
+  // Verify audio URL accessibility (lightweight HEAD request)
+  private async verifyAudioUrl(url: string): Promise<void> {
+    if (!import.meta.client) return
+
+    try {
+      const response = await fetch(url, { 
+        method: 'HEAD',
+        signal: AbortSignal.timeout(5000) // 5 second timeout
+      })
+      
+      if (!response.ok) {
+        throw new Error(`Audio URL not accessible: ${response.status}`)
+      }
+    } catch (error) {
+      console.warn('Audio URL verification failed:', error)
+      // Don't throw - let Howler.js handle the actual loading
+    }
   }
 
   private async updateLastAccessed(id: string): Promise<void> {
@@ -223,16 +268,17 @@ export class AudioService {
   }
 
   async clearCache(): Promise<void> {
-    if (!this.db) return
-
-    return new Promise((resolve, reject) => {
-      const transaction = this.db!.transaction([this.storeName], 'readwrite')
-      const store = transaction.objectStore(this.storeName)
-      const request = store.clear()
-      
-      request.onsuccess = () => resolve()
-      request.onerror = () => reject(request.error)
-    })
+    // Clear IndexedDB cache
+    if (this.db) {
+      await new Promise<void>((resolve, reject) => {
+        const transaction = this.db!.transaction([this.storeName], 'readwrite')
+        const store = transaction.objectStore(this.storeName)
+        const request = store.clear()
+        
+        request.onsuccess = () => resolve()
+        request.onerror = () => reject(request.error)
+      })
+    }
   }
 
   async getCacheStats(): Promise<{ totalFiles: number; totalSize: number; lastCleanup: number }> {

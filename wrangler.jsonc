@@ -7,6 +7,12 @@
 	"name": "quran-th",
 	"main": "./.output/server/index.mjs",
 	"compatibility_date": "2025-09-06",
+	"routes": [
+		{
+			"pattern": "quran.in.th",
+			"custom_domain": true
+		}
+	],
 	"assets": {
 		"binding": "ASSETS",
 		"directory": "./.output/public/"
@@ -14,9 +20,13 @@
 	"observability": {
 		"enabled": true
 	},
-	"vars": {
-		"AUDIO_CDN_URL": "https://quran.softwork-th.workers.dev"
-	},
+	"r2_buckets": [
+		{
+			"binding": "AUDIO_BUCKET",
+			"bucket_name": "quran-audio-bucket",
+			"experimental_remote": true
+		}
+	],
 	/**
 	 * Smart Placement
 	 * Docs: https://developers.cloudflare.com/workers/configuration/smart-placement/#smart-placement

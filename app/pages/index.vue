@@ -6,7 +6,7 @@
       <header class="p-4 pt-12 safe-top">
         <div class="flex items-center justify-between mb-2">
           <div>
-            <p class="text-sm text-slate-600 dark:text-slate-400">Now playing</p>
+            <p class="text-sm text-slate-600 dark:text-slate-400">กำลังฟัง</p>
             <h1 class="text-lg font-semibold text-slate-800 dark:text-slate-100">
               {{ getCurrentSurahName() }}
             </h1>
@@ -58,9 +58,11 @@
               <!-- Play Button Overlay -->
               <button
                 class="relative z-10 w-16 h-16 bg-indigo-500 rounded-full flex items-center justify-center text-white shadow-lg transition-transform active:scale-95"
-                :disabled="!currentSurah || !currentReciter" @click="togglePlay">
-                <UIcon v-if="!isLoading" :name="isPlaying ? 'i-heroicons-pause' : 'i-heroicons-play'" class="w-6 h-6"
+                :disabled="!currentSurah || !currentReciter" @click="togglePlay"
+                :class="{ 'bg-red-500': networkError, 'bg-orange-500': isBuffering && !isLoading }">
+                <UIcon v-if="!isLoading && !isBuffering" :name="isPlaying ? 'i-heroicons-pause' : 'i-heroicons-play'" class="w-6 h-6"
                   :class="{ 'ml-1': !isPlaying }" />
+                <UIcon v-else-if="networkError" name="i-heroicons-exclamation-triangle" class="w-6 h-6" />
                 <div v-else class="w-6 h-6 animate-spin rounded-full border-2 border-white border-t-transparent" />
               </button>
             </div>
@@ -75,6 +77,19 @@
           <p class="text-slate-700 dark:text-slate-400">
             Saʻad al-Ghāmidī - เสียงภาษาไทยโดย อ.บรรจง โซ๊ะมณี
           </p>
+          
+          <!-- Network Status Indicator -->
+          <div v-if="networkError" class="mt-2 px-3 py-1 bg-red-100 dark:bg-red-900/30 rounded-full">
+            <p class="text-red-600 dark:text-red-400 text-sm">
+              เชื่อมต่อเน็ตเวิร์คขัดข้อง (ลองใหม่ {{ retryCount }}/3 ครั้ง)
+            </p>
+          </div>
+          
+          <div v-else-if="isBuffering && !isLoading" class="mt-2 px-3 py-1 bg-orange-100 dark:bg-orange-900/30 rounded-full">
+            <p class="text-orange-600 dark:text-orange-400 text-sm">
+              กำลังโหลดเสียง... {{ Math.round(loadProgress) }}%
+            </p>
+          </div>
         </div>
 
         <!-- Primary Controls -->
@@ -237,10 +252,13 @@
                   <div class="flex gap-4">
                     <button
                       class="px-6 py-2 bg-black text-white rounded-full font-medium hover:bg-black/90 transition-colors flex items-center gap-2 cursor-pointer"
-                      :disabled="isLoading" @click="playFromHero">
-                      <UIcon :name="isPlaying ? 'i-heroicons-pause' : 'i-heroicons-play'" class="w-5 h-5"
+                      :disabled="isLoading || isBuffering" @click="playFromHero"
+                      :class="{ 'bg-red-600 hover:bg-red-700': networkError, 'bg-orange-600 hover:bg-orange-700': isBuffering && !isLoading }">
+                      <UIcon v-if="!isLoading && !isBuffering" :name="isPlaying ? 'i-heroicons-pause' : 'i-heroicons-play'" class="w-5 h-5"
                         :class="{ 'ml-0.5': !isPlaying }" />
-                      {{ isPlaying ? 'PAUSE' : 'PLAY' }}
+                      <UIcon v-else-if="networkError" name="i-heroicons-exclamation-triangle" class="w-5 h-5" />
+                      <div v-else class="w-5 h-5 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                      {{ networkError ? 'ERROR' : isBuffering ? 'BUFFERING' : isPlaying ? 'PAUSE' : 'PLAY' }}
                     </button>
                   </div>
                 </div>
@@ -380,7 +398,7 @@ const {
   formatFileSize
 } = useSurahs();
 
-// Audio player
+// Audio player - Enhanced with Howler.js for reliable streaming
 const {
   isPlaying,
   isLoading,
@@ -400,7 +418,12 @@ const {
   formatTime,
   updateMediaMetadata,
   setAutoPlayMetadataCallback,
-} = useAudioPlayer();
+  // New Howler-specific state
+  isBuffering,
+  loadProgress,
+  networkError,
+  retryCount,
+} = useHowlerAudioPlayer();
 
 // Selection state  
 const selectedSurahValue = ref<number | undefined>(undefined);

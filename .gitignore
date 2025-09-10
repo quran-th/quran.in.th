@@ -29,10 +29,6 @@ logs
 !.dev.vars.example
 .env*
 
-# Audio files (large files for CDN)
-public/audio/*.mp3
-# Un-ignore specific files for development
-!public/audio/001.mp3
-!public/audio/112.mp3
-!public/audio/113.mp3
-!public/audio/114.mp3
+# Audio files (moved to R2 bucket)
+public/audio/
+public/audio_backup/

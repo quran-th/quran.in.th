@@ -5,6 +5,7 @@
 	"scripts": {
 		"build": "nuxt build",
 		"dev": "nuxt dev",
+		"dev:cf": "wrangler dev --x-remote-bindings",
 		"generate": "nuxt generate",
 		"preview": "npm run build && wrangler dev",
 		"postinstall": "nuxt prepare",
@@ -17,11 +18,13 @@
 		"@nuxt/eslint": "^1.9.0",
 		"@nuxt/ui": "^3.3.3",
 		"eslint": "^9.35.0",
+		"howler": "^2.2.4",
 		"nuxt": "^4.1.1",
 		"vue": "^3.5.20",
 		"vue-router": "^4.5.1"
 	},
 	"devDependencies": {
+		"@types/howler": "^2.2.12",
 		"@types/node": "^24.3.1",
 		"nitro-cloudflare-dev": "^0.2.2",
 		"nitropack": "^2.12.5",
