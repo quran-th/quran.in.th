@@ -11,7 +11,7 @@
 [![Vue](https://img.shields.io/badge/Vue-3-4FC08D)](https://vuejs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6)](https://www.typescriptlang.org/)
 
-[🌐 เยี่ยมชมเว็บไซต์](https://quran.in.th) • [📖 เอกสาร](./claudedocs/) • [🐛 รายงานปัญหา](https://github.com/ninearif/quran-th/issues)
+[🌐 เยี่ยมชมเว็บไซต์](https://quran.in.th) • [🐛 รายงานปัญหา](https://github.com/ninearif/quran-th/issues)
 
 </div>
 

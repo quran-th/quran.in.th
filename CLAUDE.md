@@ -77,7 +77,6 @@ Generates TypeScript types for Cloudflare Workers
   - `bg.webp`: Hero section background image
   - `fonts/`: Thai font files
   - `manifest.json`: PWA configuration
-- `claudedocs/`: Implementation documentation and guides
 - `.output/`: Build output directory (auto-generated)
 - `.nuxt/`: Nuxt build cache and generated files
 
