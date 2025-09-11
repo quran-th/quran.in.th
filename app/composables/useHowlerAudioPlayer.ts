@@ -39,11 +39,15 @@ export const useHowlerAudioPlayer = () => {
 
   // Configuration for streaming optimization
   const MAX_RETRIES = 3
-  const RETRY_DELAY = 1000 // 1 second
+  const RETRY_DELAY = 1000 // 1 second base delay
   const UPDATE_INTERVAL = 100 // Update progress every 100ms
 
   // Progress tracking
   let progressTimer: NodeJS.Timeout | null = null
+  
+  // Retry management to prevent endless reload cycles
+  let currentLoadOperation: string | null = null
+  let isRetrying = false
 
   // Computed properties
   const progress = computed(() => {
@@ -64,7 +68,7 @@ export const useHowlerAudioPlayer = () => {
     if (!currentVerseTiming.value) return state.currentVerse
     
     const verseKey = currentVerseTiming.value.verse_key
-    const verseNumber = parseInt(verseKey.split(':')[1])
+    const verseNumber = parseInt(verseKey.split(':')[1] || '1')
     return verseNumber
   })
 
@@ -105,16 +109,13 @@ export const useHowlerAudioPlayer = () => {
         state.loadProgress = 100
         state.networkError = false
         state.retryCount = 0
+        state.error = null
+        // Clear operation state on successful load
+        currentLoadOperation = null
+        isRetrying = false
         console.log('Audio loaded successfully')
       },
       
-      onloadstart: () => {
-        state.isLoading = true
-        state.isBuffering = true
-        state.loadProgress = 0
-        state.error = null
-        state.networkError = false
-      },
       
       onloaderror: (id, error) => {
         console.error('Howler load error:', error)
@@ -163,30 +164,57 @@ export const useHowlerAudioPlayer = () => {
     return howl
   }
 
-  // Enhanced error handling with retry mechanisms
-  const handleLoadError = async (error: any) => {
+  // Enhanced error handling with retry mechanisms - prevents endless reload cycles
+  const handleLoadError = async (error: unknown) => {
     console.error('Load error:', error)
     state.isLoading = false
     state.isBuffering = false
     state.networkError = true
 
+    // Prevent recursive retries during an active retry operation
+    if (isRetrying) {
+      console.warn('Retry already in progress, skipping additional retry attempt')
+      return
+    }
+
     if (state.retryCount < MAX_RETRIES) {
       state.retryCount++
+      isRetrying = true
       console.log(`Retrying... Attempt ${state.retryCount}/${MAX_RETRIES}`)
       
-      // Wait before retry
-      await new Promise(resolve => setTimeout(resolve, RETRY_DELAY * state.retryCount))
-      
-      // Retry loading
-      if (state.currentSurah && state.currentReciter) {
-        await loadAudio(state.currentSurah, state.currentReciter)
+      try {
+        // Exponential backoff delay (1s, 2s, 4s)
+        const delay = RETRY_DELAY * Math.pow(2, state.retryCount - 1)
+        await new Promise(resolve => setTimeout(resolve, delay))
+        
+        // Retry by creating a new Howl instance directly instead of calling loadAudio
+        if (state.currentSurah && state.currentReciter && currentLoadOperation) {
+          const audioUrl = await audioService.getAudioUrl(state.currentSurah, state.currentReciter)
+          
+          // Cleanup previous instance if exists
+          if (state.currentHowl) {
+            state.currentHowl.unload()
+          }
+          
+          // Create new instance with same configuration
+          state.currentHowl = createHowlInstance(audioUrl)
+        }
+      } catch (retryError) {
+        console.error('Retry attempt failed:', retryError)
+        state.error = 'Failed to load audio after retry'
+      } finally {
+        isRetrying = false
       }
     } else {
-      state.error = 'Failed to load audio after multiple attempts'
+      // Circuit breaker: stop automatic retries after max attempts
+      state.error = 'Failed to load audio after 3 attempts. Check your connection and try again.'
+      console.error('Max retry attempts reached. Manual retry required.')
+      isRetrying = false
+      currentLoadOperation = null
     }
   }
 
-  const handlePlayError = async (error: any) => {
+  const handlePlayError = async (error: unknown) => {
     console.error('Play error:', error)
     state.isPlaying = false
     state.networkError = true
@@ -308,6 +336,13 @@ export const useHowlerAudioPlayer = () => {
   // Load and play audio with enhanced error handling
   const loadAudio = async (surahId: number, reciterId: number) => {
     try {
+      // Create unique operation ID to track this specific load operation
+      const operationId = `${surahId}-${reciterId}-${Date.now()}`
+      currentLoadOperation = operationId
+      
+      // Reset retry state for new load operation
+      isRetrying = false
+      
       // Cleanup previous instance
       if (state.currentHowl) {
         state.currentHowl.unload()
@@ -315,6 +350,8 @@ export const useHowlerAudioPlayer = () => {
       }
 
       state.isLoading = true
+      state.isBuffering = true
+      state.loadProgress = 0
       state.error = null
       state.networkError = false
       state.retryCount = 0
@@ -337,12 +374,13 @@ export const useHowlerAudioPlayer = () => {
       state.error = 'Failed to load audio'
       state.isLoading = false
       state.networkError = true
+      currentLoadOperation = null
     }
   }
 
   // Update MediaSession metadata when audio is loaded
   const updateMediaMetadata = (surahName: string, reciterName: string) => {
-    updateMediaSessionMetadata(surahName, reciterName, state.currentSurah || 1)
+    updateMediaSessionMetadata(surahName, reciterName)
   }
 
   // Playback controls with enhanced reliability
@@ -357,11 +395,12 @@ export const useHowlerAudioPlayer = () => {
       state.error = null
       state.networkError = false
       
-      const playPromise = state.currentHowl.play()
+      const playResult = state.currentHowl.play()
       
-      // Handle play promise if it exists (some browsers return promises)
-      if (playPromise && typeof playPromise.then === 'function') {
-        await playPromise
+      // Howler.js play() returns a sound ID number, not a promise
+      // The onplay callback will handle the play event
+      if (typeof playResult === 'number') {
+        // Successfully started playback
       }
       
     } catch (error) {
@@ -510,6 +549,26 @@ export const useHowlerAudioPlayer = () => {
     return `${mins}:${secs.toString().padStart(2, '0')}`
   }
 
+  // Manual retry function for when automatic retries are exhausted
+  const manualRetry = async () => {
+    if (!state.currentSurah || !state.currentReciter) {
+      console.warn('No surah/reciter selected for manual retry')
+      return
+    }
+    
+    console.log('Manual retry requested')
+    
+    // Reset retry state and try again
+    state.retryCount = 0
+    state.networkError = false
+    state.error = null
+    isRetrying = false
+    currentLoadOperation = null
+    
+    // Reload the audio
+    await loadAudio(state.currentSurah, state.currentReciter)
+  }
+
   // Cleanup with proper resource disposal
   const cleanup = () => {
     stopProgressTracking()
@@ -518,6 +577,10 @@ export const useHowlerAudioPlayer = () => {
       state.currentHowl.unload()
       state.currentHowl = null
     }
+    
+    // Reset retry state
+    isRetrying = false
+    currentLoadOperation = null
     
     // Reset state
     state.isPlaying = false
@@ -577,6 +640,7 @@ export const useHowlerAudioPlayer = () => {
     
     // New Howler-specific methods
     initHowler,
-    createHowlInstance
+    createHowlInstance,
+    manualRetry
   }
 }

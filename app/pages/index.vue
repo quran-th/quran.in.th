@@ -58,10 +58,12 @@
               <!-- Play Button Overlay -->
               <button
                 class="relative z-10 w-16 h-16 bg-indigo-500 rounded-full flex items-center justify-center text-white shadow-lg transition-transform active:scale-95"
-                :disabled="!currentSurah || !currentReciter" @click="togglePlay"
+                :disabled="!currentSurah || !currentReciter" 
+                @click="networkError && retryCount >= 3 ? manualRetry() : togglePlay()"
                 :class="{ 'bg-red-500': networkError, 'bg-orange-500': isBuffering && !isLoading }">
-                <UIcon v-if="!isLoading && !isBuffering" :name="isPlaying ? 'i-heroicons-pause' : 'i-heroicons-play'" class="w-6 h-6"
+                <UIcon v-if="!isLoading && !isBuffering && !networkError" :name="isPlaying ? 'i-heroicons-pause' : 'i-heroicons-play'" class="w-6 h-6"
                   :class="{ 'ml-1': !isPlaying }" />
+                <UIcon v-else-if="networkError && retryCount >= 3" name="i-heroicons-arrow-path" class="w-6 h-6" />
                 <UIcon v-else-if="networkError" name="i-heroicons-exclamation-triangle" class="w-6 h-6" />
                 <div v-else class="w-6 h-6 animate-spin rounded-full border-2 border-white border-t-transparent" />
               </button>
@@ -81,7 +83,8 @@
           <!-- Network Status Indicator -->
           <div v-if="networkError" class="mt-2 px-3 py-1 bg-red-100 dark:bg-red-900/30 rounded-full">
             <p class="text-red-600 dark:text-red-400 text-sm">
-              เชื่อมต่อเน็ตเวิร์คขัดข้อง (ลองใหม่ {{ retryCount }}/3 ครั้ง)
+              <span v-if="retryCount < 3">เชื่อมต่อเน็ตเวิร์คขัดข้อง (ลองใหม่ {{ retryCount }}/3 ครั้ง)</span>
+              <span v-else>เชื่อมต่อล้มเหลว - กดปุ่มเล่นเพื่อลองใหม่</span>
             </p>
           </div>
           
@@ -206,7 +209,7 @@
     </div>
 
     <!-- Large Screen Layout -->
-    <div class="hidden md:block min-h-screen bg-slate-50 dark:bg-slate-900">
+    <div class="hidden md:block min-h-screen bg-[#e7e8f3] dark:bg-slate-900 ">
 
       <!-- Large Screen Header -->
       <header class="p-6">
@@ -254,11 +257,12 @@
                       class="px-6 py-2 bg-black text-white rounded-full font-medium hover:bg-black/90 transition-colors flex items-center gap-2 cursor-pointer"
                       :disabled="isLoading || isBuffering" @click="playFromHero"
                       :class="{ 'bg-red-600 hover:bg-red-700': networkError, 'bg-orange-600 hover:bg-orange-700': isBuffering && !isLoading }">
-                      <UIcon v-if="!isLoading && !isBuffering" :name="isPlaying ? 'i-heroicons-pause' : 'i-heroicons-play'" class="w-5 h-5"
+                      <UIcon v-if="!isLoading && !isBuffering && !networkError" :name="isPlaying ? 'i-heroicons-pause' : 'i-heroicons-play'" class="w-5 h-5"
                         :class="{ 'ml-0.5': !isPlaying }" />
+                      <UIcon v-else-if="networkError && retryCount >= 3" name="i-heroicons-arrow-path" class="w-5 h-5" />
                       <UIcon v-else-if="networkError" name="i-heroicons-exclamation-triangle" class="w-5 h-5" />
                       <div v-else class="w-5 h-5 animate-spin rounded-full border-2 border-white border-t-transparent" />
-                      {{ networkError ? 'ERROR' : isBuffering ? 'BUFFERING' : isPlaying ? 'PAUSE' : 'PLAY' }}
+                      {{ networkError && retryCount >= 3 ? 'ลองใหม่' : networkError ? 'เกิดข้อผิดพลาด' : isBuffering ? 'BUFFERING' : isPlaying ? 'หยุด' : 'เริ่ม' }}
                     </button>
                   </div>
                 </div>
@@ -345,7 +349,7 @@
       </main>
 
       <!-- Mini Player (Fixed Bottom) -->
-      <div class="fixed bottom-0 left-0 right-0 bg-slate-900 text-white px-6 py-4">
+      <div class="fixed bottom-0 left-0 right-0 bg-slate-900 dark:bg-slate-950 text-white px-6 py-4">
         <div class="flex items-center gap-4">
           <!-- Track Info -->
           <div class="flex items-center gap-3 flex-1">
@@ -394,8 +398,7 @@ const toggleDarkMode = () => {
 const {
   surahs,
   getSurahById,
-  formatDuration,
-  formatFileSize
+  formatDuration
 } = useSurahs();
 
 // Audio player - Enhanced with Howler.js for reliable streaming
@@ -423,6 +426,7 @@ const {
   loadProgress,
   networkError,
   retryCount,
+  manualRetry,
 } = useHowlerAudioPlayer();
 
 // Selection state  
@@ -501,6 +505,12 @@ const selectAndPlaySurah = async (surahId: number) => {
 
 // Play from hero button - toggle play/pause or start new audio
 const playFromHero = async () => {
+  // If network error and retries exhausted, trigger manual retry
+  if (networkError.value && retryCount.value >= 3) {
+    await manualRetry();
+    return;
+  }
+
   // If audio is currently playing, just toggle pause
   if (isPlaying.value) {
     await togglePlay();
