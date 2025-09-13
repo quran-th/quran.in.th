@@ -47,16 +47,22 @@ export class AudioService {
 
   async fetchAudioMetadata(reciterId: number, chapterId: number): Promise<AudioFile> {
     try {
-      // Return local audio file metadata with 3-digit padding
-      const paddedId = chapterId.toString().padStart(3, '0')
-      const audioUrl = `/audio/${paddedId}.mp3`
+      // Get audio configuration from Cloudflare environment variables
+      const { useLocalAudio } = await $fetch<{ useLocalAudio: boolean }>('/api/config/audio')
+      const paddedSurahId = chapterId.toString().padStart(3, '0')
+      const paddedReciterId = reciterId.toString().padStart(3, '0')
       
-      // Create mock metadata that matches the expected AudioFile interface
+      // Environment-aware URL generation
+      const audioUrl = useLocalAudio 
+        ? `/audio/${paddedReciterId}/${paddedSurahId}.ogg`  // Direct access to /public/audio/ files with new structure
+        : `/api/audio/${paddedReciterId}/${chapterId}` // API endpoint for R2 streaming with reciter
+      
+      // Create metadata that matches the expected AudioFile interface
       const audioFile: AudioFile = {
         id: chapterId,
         chapter_id: chapterId,
         file_size: 0, // Will be determined when loading
-        format: 'mp3',
+        format: 'ogg', // Updated format to ogg
         audio_url: audioUrl,
         duration: 0, // Set to 0 or fetch actual duration if available
         verse_timings: [] // No verse timings for local files initially
@@ -64,7 +70,7 @@ export class AudioService {
       
       return audioFile
     } catch (error) {
-      console.error('Error fetching local audio metadata:', error)
+      console.error('Error fetching audio metadata:', error)
       throw error
     }
   }
@@ -133,16 +139,28 @@ export class AudioService {
     }
   }
 
-  async getAudioUrl(surahId: number, _reciterId: number): Promise<string> {
-    // Return optimized streaming URL for Howler.js
-    // The API endpoint streams audio directly from R2 with proper headers
-    // for progressive loading and byte-range requests
-    const baseUrl = `/api/audio/${surahId}`
+  async getAudioUrl(surahId: number, reciterId: number): Promise<string> {
+    // Get audio configuration from Cloudflare environment variables
+    const { useLocalAudio } = await $fetch<{ useLocalAudio: boolean }>('/api/config/audio')
+    const paddedSurahId = surahId.toString().padStart(3, '0')
+    const paddedReciterId = reciterId.toString().padStart(3, '0')
     
-    // Add cache-busting parameter to prevent stale cached responses
-    // that might cause audio skipping issues
-    const timestamp = Date.now()
-    return `${baseUrl}?t=${timestamp}`
+    console.log('LOCAL AUDIO (from Cloudflare env):', useLocalAudio)
+
+    // Environment-aware URL generation
+    if (useLocalAudio) {
+      // For local development: direct access to /public/audio/ files
+      // New structure: reciter_id/surah.ogg (e.g., 001/001.ogg)
+      return `/audio/${paddedReciterId}/${paddedSurahId}.ogg`
+    } else {
+      // For production: API endpoint streams audio from R2 with proper headers
+      // for progressive loading and byte-range requests
+      const baseUrl = `/api/audio/${paddedReciterId}/${surahId}`
+      // Add cache-busting parameter to prevent stale cached responses
+      // that might cause audio skipping issues
+      const timestamp = Date.now()
+      return `${baseUrl}?t=${timestamp}`
+    }
   }
 
   // Get streaming configuration for Howler.js optimization

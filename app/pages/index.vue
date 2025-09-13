@@ -77,7 +77,7 @@
             {{ getCurrentSurahName().split('.')[1]?.trim() || 'อัล-ฟาติหะฮฺ' }}
           </h2>
           <p class="text-slate-700 dark:text-slate-400">
-            Saʻad al-Ghāmidī - เสียงภาษาไทยโดย อ.บรรจง โซ๊ะมณี
+            เสียงแปลโดย {{ getCurrentReciterName }}
           </p>
           
           <!-- Network Status Indicator -->
@@ -114,6 +114,15 @@
             @click="showSurahList = true">
             <UIcon name="i-heroicons-list-bullet" class="w-6 h-6" />
           </button>
+        </div>
+
+        <!-- Mobile Reciter Selector -->
+        <div class="flex justify-center mb-6">
+          <ReciterSelector 
+            variant="mobile" 
+            @reciter-changed="onReciterChanged"
+            button-class="w-full max-w-xs bg-white/80 dark:bg-slate-700 backdrop-blur-sm shadow-sm" 
+          />
         </div>
 
         <!-- Secondary Controls -->
@@ -268,7 +277,7 @@
                 </div>
 
                 <div class="text-right">
-                  <p class="text-white/60 text-sm mb-1">© {{ new Date().getFullYear() }} Copyright</p>
+                  <p class="text-white/60 text-sm mb-1">เสียงแปลโดย {{ getCurrentReciterName }}</p>
                 </div>
               </div>
             </div>
@@ -278,9 +287,17 @@
           <section>
             <div class="flex items-center justify-between mb-6">
               <h2 class="text-2xl font-bold text-slate-900 dark:text-slate-100">เพลย์ลิสต์</h2>
-              <button class="text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100">
-                <span class="text-sm text-slate-500 dark:text-slate-400">ทั้งหมด {{ surahs.length }} รายการ</span>
-              </button>
+              <div class="flex items-center gap-4">
+                <!-- Desktop Reciter Selector -->
+                <ReciterSelector 
+                  variant="desktop" 
+                  @reciter-changed="onReciterChanged"
+                  button-class="" 
+                />
+                <button class="text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100">
+                  <span class="text-sm text-slate-500 dark:text-slate-400">ทั้งหมด {{ surahs.length }} รายการ</span>
+                </button>
+              </div>
             </div>
 
             <!-- Playlist Table -->
@@ -336,8 +353,8 @@
 
                     <!-- Reciter info -->
                     <div class="col-span-4">
-                      <p class="text-slate-500 dark:text-slate-400 text-xs">Saʻad al-Ghāmidī - เสียงภาษาไทยโดย อ.บรรจง
-                        โซ๊ะมณี
+                      <p class="text-slate-500 dark:text-slate-400 text-xs">
+                        เสียงแปลโดย {{ getCurrentReciterName }}
                       </p>
                     </div>
                   </div>
@@ -359,7 +376,7 @@
             </div>
             <div>
               <p class="font-medium">{{ getCurrentSurahName().split('.')[1]?.trim() || 'อัล-ฟาติหะฮฺ' }}</p>
-              <p class="text-white/60 text-sm">Saʻad al-Ghāmidī - เสียงภาษาไทยโดย อ.บรรจง โซ๊ะมณี</p>
+              <p class="text-white/60 text-sm">เสียงแปลโดย {{ getCurrentReciterName }}</p>
             </div>
           </div>
 
@@ -401,6 +418,12 @@ const {
   formatDuration
 } = useSurahs();
 
+const {
+  selectedReciter,
+  getCurrentReciterName,
+  setSelectedReciter
+} = useReciters();
+
 // Audio player - Enhanced with Howler.js for reliable streaming
 const {
   isPlaying,
@@ -431,6 +454,7 @@ const {
 
 // Selection state  
 const selectedSurahValue = ref<number | undefined>(undefined);
+const currentReciterId = ref<number>(1); // Default to first reciter
 
 // Modal state
 const showSurahList = ref(false);
@@ -454,16 +478,16 @@ const loadNewAudio = async () => {
   if (!selectedSurahValue.value) return;
 
   try {
-    // Use default reciter ID since we don't have reciter selection
-    const defaultReciterId = 1;
-    await loadAudio(selectedSurahValue.value, defaultReciterId);
+    // Use current selected reciter
+    await loadAudio(selectedSurahValue.value, currentReciterId.value);
 
     // Update MediaSession metadata with Thai names
     const surah = getSurahById(selectedSurahValue.value);
 
     if (surah) {
       const surahDisplayName = `ซูเราะฮฺ ${surah.thaiName}`;
-      updateMediaMetadata(surahDisplayName, "Saʻad al-Ghāmidī - เสียงภาษาไทยโดย อ.บรรจง โซ๊ะมณี");
+      const reciterName = getCurrentReciterName.value;
+      updateMediaMetadata(surahDisplayName, `เสียงแปลโดย ${reciterName}`);
     }
   } catch (err) {
     console.error("Failed to load audio:", err);
@@ -537,11 +561,10 @@ const playSelectedAudio = async () => {
   if (!selectedSurahValue.value) return;
 
   try {
-    const defaultReciterId = 4; // Default reciter ID
-    console.log(`🎵 Attempting to load Surah ${selectedSurahValue.value} with default reciter`);
+    console.log(`🎵 Attempting to load Surah ${selectedSurahValue.value} with reciter ${currentReciterId.value}`);
 
-    // Load the audio
-    await loadAudio(selectedSurahValue.value, defaultReciterId);
+    // Load the audio with current selected reciter
+    await loadAudio(selectedSurahValue.value, currentReciterId.value);
 
     // Small delay to ensure audio is fully loaded
     await new Promise(resolve => setTimeout(resolve, 100));
@@ -555,8 +578,9 @@ const playSelectedAudio = async () => {
 
     if (surah) {
       const surahDisplayName = `ซูเราะฮฺ ${surah.thaiName}`;
-      updateMediaMetadata(surahDisplayName, "Saʻad al-Ghāmidī - เสียงภาษาไทยโดย อ.บรรจง โซ๊ะมณี");
-      console.log(`🎵 Now playing: ${surahDisplayName}`);
+      const reciterName = getCurrentReciterName.value;
+      updateMediaMetadata(surahDisplayName, `เสียงแปลโดย ${reciterName}`);
+      console.log(`🎵 Now playing: ${surahDisplayName} by ${reciterName}`);
     }
   } catch (err) {
     console.error("❌ Failed to load and play audio:", err);
@@ -580,6 +604,28 @@ const selectSurahFromModal = (surahId: number) => {
   showSurahList.value = false;
 };
 
+// Handle reciter change
+const onReciterChanged = async (reciterId: number) => {
+  console.log(`🎵 Reciter changing to ID: ${reciterId}`);
+  
+  // Update the composable state first - this will trigger reactive updates
+  setSelectedReciter(reciterId);
+  currentReciterId.value = reciterId;
+  
+  console.log(`🎵 Reciter changed to: ${getCurrentReciterName.value}`);
+  
+  // If audio is currently loaded, reload and auto-play with new reciter
+  if (selectedSurahValue.value) {
+    console.log(`🎵 Reloading audio with new reciter for Surah ${selectedSurahValue.value}`);
+    await playSelectedAudio(); // This will reload and auto-play with new reciter
+  } else if (currentSurah.value) {
+    // If no selectedSurahValue but we have currentSurah, use that
+    selectedSurahValue.value = currentSurah.value;
+    console.log(`🎵 Reloading current Surah ${currentSurah.value} with new reciter`);
+    await playSelectedAudio();
+  }
+};
+
 // Initialize with default values
 onMounted(() => {
   // Set default surah (Al-Fatiha)
@@ -593,13 +639,38 @@ onMounted(() => {
     { immediate: true },
   );
 
+  // Watch for reciter changes and update current reciter ID
+  watch(selectedReciter, (newReciter, oldReciter) => {
+    if (newReciter) {
+      currentReciterId.value = newReciter.reciter_id;
+      
+      // Update metadata for current playing surah when reciter changes
+      if (currentSurah.value) {
+        const surah = getSurahById(currentSurah.value);
+        if (surah) {
+          const surahDisplayName = `ซูเราะฮฺ ${surah.thaiName}`;
+          const reciterName = getCurrentReciterName.value;
+          updateMediaMetadata(surahDisplayName, `เสียงแปลโดย ${reciterName}`);
+          console.log(`🎵 Watch triggered: Updated metadata for ${surahDisplayName} by ${reciterName}`);
+        }
+      }
+      
+      // Log reciter change for debugging
+      if (oldReciter && newReciter.reciter_id !== oldReciter.reciter_id) {
+        console.log(`🎵 Watch: Reciter changed from ${oldReciter.name} to ${newReciter.name}`);
+      }
+    }
+  }, { immediate: true });
+
   // Set up auto-play metadata update callback
   setAutoPlayMetadataCallback((surahId: number) => {
     const surah = getSurahById(surahId);
 
     if (surah) {
       const surahDisplayName = `ซูเราะฮฺ ${surah.thaiName}`;
-      updateMediaMetadata(surahDisplayName, "Saʻad al-Ghāmidī - เสียงภาษาไทยโดย อ.บรรจง โซ๊ะมณี");
+      const reciterName = getCurrentReciterName.value;
+      updateMediaMetadata(surahDisplayName, `เสียงแปลโดย ${reciterName}`);
+      console.log(`🎵 Auto-play callback: Updated metadata for ${surahDisplayName} by ${reciterName}`);
     }
   });
 });

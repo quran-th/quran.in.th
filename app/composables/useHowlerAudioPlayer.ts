@@ -99,7 +99,7 @@ export const useHowlerAudioPlayer = () => {
       src: [audioUrl],
       html5: true, // Enable HTML5 Audio for streaming
       preload: 'metadata', // Only preload metadata for faster startup
-      format: ['mp3'], // Specify format for better optimization
+      format: ['ogg', 'mp3'], // Support both ogg and mp3 formats
       
       // Event handlers
       onload: () => {
@@ -306,9 +306,9 @@ export const useHowlerAudioPlayer = () => {
       album: 'อัลกุรอาน - Al-Quran',
       artwork: [
         {
-          src: '/favicon.ico',
-          sizes: '48x48',
-          type: 'image/x-icon'
+          src: '/cover.jpg',
+          sizes: '128x128',
+          type: 'image/jpeg'
         }
       ]
     })

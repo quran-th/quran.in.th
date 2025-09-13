@@ -11,14 +11,6 @@ export default defineEventHandler(async (event) => {
       },
     })
   }
-
-  // Check if local audio is enabled via Cloudflare environment variables
-  const env = event.context.cloudflare?.env || {}
-  const useLocalAudio = env.USE_LOCAL_AUDIO === 'true'
-  
-  if (useLocalAudio) {
-    return new Response('Local audio mode enabled - use direct file access', { status: 503 })
-  }
   
   // Get parameters from the dynamic route [reciterId]/[id]
   const reciterId = getRouterParam(event, 'reciterId')
@@ -42,8 +34,9 @@ export default defineEventHandler(async (event) => {
   
   try {
     // R2 Bucket streaming for production with new directory structure
-    const paddedId = surahNumber.toString().padStart(3, '0')
-    const objectKey = `${reciterNumber}/${paddedId}.ogg`
+    const paddedSurahId = surahNumber.toString().padStart(3, '0')
+    const paddedReciterId = reciterNumber.toString().padStart(3, '0')
+    const objectKey = `${paddedReciterId}/${paddedSurahId}.ogg`
 
     // Access R2 bucket from Cloudflare Workers binding
     const bucket = event.context.cloudflare?.env?.AUDIO_BUCKET

@@ -39,5 +39,18 @@ export default defineNuxtConfig({
     "nitro-cloudflare-dev",
     "@nuxt/ui",
     "@nuxt/eslint"
-  ]
+  ],
+
+  runtimeConfig: {
+    // Private keys (only available on server-side)
+    // Note: USE_LOCAL_AUDIO is now handled via Cloudflare env vars in API routes
+    // This fallback is for local development only
+    useLocalAudio: process.env.USE_LOCAL_AUDIO === 'true',
+    
+    // Public keys (exposed to client-side)
+    public: {
+      // Client-side will get this value from API endpoint
+      useLocalAudio: process.env.USE_LOCAL_AUDIO === 'true'
+    }
+  }
 })

@@ -16,7 +16,7 @@ export const useSurahs = () => {
       
       // Convert metadata object to array of surahs
       surahsData.value = Object.entries(audioMetadata)
-        .map(([id, data]: [string, any]) => {
+        .map(([id, data]: [string, Record<string, unknown>]) => {
           const surahId = parseInt(id)
           
           return {
