@@ -251,7 +251,10 @@ export const useAudioPlayer = () => {
         },
         onend: () => {
           state.isPlaying = false
-          handleAudioEnd()
+          // Only trigger next surah if playback ended near the actual end
+          if (state.duration > 0 && Math.abs(state.duration - state.currentTime) < 2) {
+            handleAudioEnd()
+          }
           console.log('[HowlerPlayer] Playback ended')
         },
         onstop: () => {
@@ -288,7 +291,7 @@ export const useAudioPlayer = () => {
             }
           }
           
-          if (state.isPlaying || state.isLoading) {
+          if (currentHowl.value) {
             requestAnimationFrame(updateTime)
           }
         }

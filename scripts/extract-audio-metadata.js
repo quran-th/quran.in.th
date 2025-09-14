@@ -81,13 +81,13 @@ function checkFFProbe() {
   try {
     execSync('ffprobe -version', { stdio: 'ignore' });
     return true;
-  } catch (error) {
+  } catch {
     console.log('⚠️  FFProbe not found. Installing ffmpeg...');
     try {
       // Try to install ffmpeg via homebrew on macOS
       execSync('brew install ffmpeg', { stdio: 'inherit' });
       return true;
-    } catch (installError) {
+    } catch {
       console.error('❌ Could not install ffmpeg. Please install manually:');
       console.error('   macOS: brew install ffmpeg');
       console.error('   Ubuntu: sudo apt install ffmpeg');
@@ -360,7 +360,7 @@ Examples:
   console.log('🎵 Starting audio metadata extraction...\n');
   
   processAudioFiles(options)
-    .then(result => {
+    .then(() => {
       console.log('\n🎉 Process completed successfully!');
       process.exit(0);
     })

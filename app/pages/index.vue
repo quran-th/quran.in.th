@@ -13,144 +13,244 @@
           </div>
           <div class="flex items-center gap-2">
             <button
-              class="w-8 h-8 rounded-full bg-white/70 dark:bg-slate-700 flex items-center justify-center backdrop-blur-sm">
-              <UIcon name="i-heroicons-chevron-down" class="w-4 h-4 text-slate-700 dark:text-slate-300" />
-            </button>
-            <button
-              class="w-8 h-8 rounded-full bg-white/70 dark:bg-slate-700 flex items-center justify-center backdrop-blur-sm">
-              <UIcon name="i-heroicons-list-bullet" class="w-4 h-4 text-slate-700 dark:text-slate-300" />
+              class="w-8 h-8 rounded-full bg-white/70 dark:bg-slate-700 flex items-center justify-center backdrop-blur-sm"
+              @click="toggleDarkMode">
+              <UIcon :name="isDark ? 'i-heroicons-sun' : 'i-heroicons-moon'" class="w-4 h-4 text-slate-700 dark:text-slate-300" />
             </button>
           </div>
         </div>
       </header>
 
-      <!-- Mobile Circular Player -->
-      <main class="px-6 pb-24 flex-1 flex flex-col">
-        <!-- Time Display -->
-        <div class="text-center mb-8">
-          <p class="text-2xl font-light text-slate-800 dark:text-slate-300">{{ formatTime(currentTime) || '-3:15' }}</p>
-        </div>
+      <!-- Compact Mobile Player - Always Visible -->
+      <main class="px-4 pb-24">
+        <!-- Compact Player Card -->
+        <div class="relative rounded-2xl overflow-hidden mb-6">
+          <!-- Background Image -->
+          <div
+            class="absolute inset-0 bg-cover bg-center bg-no-repeat"
+            style="background-image: url('/bg.webp')"
+          />
 
-        <!-- Circular Progress Ring -->
-        <div class="flex-1 flex items-center justify-center mb-8">
-          <div class="relative">
-            <!-- Progress Ring -->
-            <svg class="w-72 h-72 transform -rotate-90" viewBox="0 0 200 200">
-              <!-- Background Ring -->
-              <circle
-cx="100" cy="100" r="90" stroke="rgba(100, 116, 139, 0.3)" stroke-width="4" fill="none"
-                class="dark:stroke-slate-600" />
-              <!-- Progress Ring -->
-              <circle
-cx="100" cy="100" r="90" stroke="#6366f1" stroke-width="4" fill="none"
-                :stroke-dasharray="`${565.48}`" :stroke-dashoffset="`${565.48 - (565.48 * progress / 100)}`"
-                class="transition-all duration-300 dark:stroke-indigo-400" stroke-linecap="round" />
-            </svg>
+          <!-- Gradient Overlay -->
+          <div class="absolute inset-0 bg-gradient-to-r from-black/70 via-black/50 to-black/30" />
 
-            <!-- Album Art and Play Button -->
-            <div class="absolute inset-4 bg-white rounded-full flex items-center justify-center overflow-hidden">
-              <!-- Album Artwork (placeholder) -->
-              <div class="absolute inset-0 bg-gradient-to-br from-indigo-400 to-purple-500">
-                <!-- This would be actual album artwork -->
-                <div class="w-full h-full flex items-center justify-center text-white font-bold text-4xl">
-                  {{ currentSurah || '1' }}
-                </div>
-              </div>
-
-              <!-- Play Button Overlay -->
+          <!-- Player Content -->
+          <div class="relative z-10 p-6">
+            <!-- Player Controls Row -->
+            <div class="flex items-center gap-4 mb-4">
+              <!-- Play Button -->
               <button
-                class="relative z-10 w-16 h-16 bg-indigo-500 rounded-full flex items-center justify-center text-white shadow-lg transition-transform active:scale-95"
-                :disabled="!currentSurah || !currentReciter" 
-                :class="{ 'bg-red-500': error }"
+                class="w-14 h-14 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center text-white shadow-lg transition-all hover:bg-white/30 active:scale-95"
+                :disabled="!currentSurah || !currentReciter"
+                :class="{ 'bg-red-500/80': error }"
                 @click="togglePlay()">
                 <UIcon
-v-if="!isLoading && !error" :name="isPlaying ? 'i-heroicons-pause' : 'i-heroicons-play'" class="w-6 h-6"
+                  v-if="!isLoading && !error"
+                  :name="isPlaying ? 'i-heroicons-pause' : 'i-heroicons-play'"
+                  class="w-6 h-6"
                   :class="{ 'ml-1': !isPlaying }" />
                 <UIcon v-else-if="error" name="i-heroicons-exclamation-triangle" class="w-6 h-6" />
                 <div v-else class="w-6 h-6 animate-spin rounded-full border-2 border-white border-t-transparent" />
+              </button>
+
+              <!-- Track Info -->
+              <div class="flex-1 min-w-0">
+                <h2 class="text-white font-semibold text-lg mb-1 truncate">
+                  {{ getCurrentSurahName().split('.')[1]?.trim() || 'อัล-ฟาติหะฮฺ' }}
+                </h2>
+                <p class="text-white/70 text-sm truncate">
+                  โดย {{ getCurrentReciterName }}
+                </p>
+
+                <!-- Status Indicator -->
+                <div v-if="error" class="mt-1">
+                  <p class="text-red-300 text-xs">
+                    เกิดข้อผิดพลาด - กรุณาลองใหม่
+                  </p>
+                </div>
+
+                <div v-else-if="isBuffering || isLoading" class="mt-1">
+                  <p class="text-blue-300 text-xs">
+                    กำลังโหลดเสียง...
+                    <span v-if="networkType === 'cellular'" class="ml-1">(📱 เซลลูลาร์)</span>
+                  </p>
+                </div>
+              </div>
+
+              <!-- Revelation Place Display -->
+              <div class="flex items-center text-white/80 text-xs">
+                <div class="px-2 py-1 bg-white/20 rounded-full">
+                  {{ getCurrentSurahRevelationPlace() }}
+                </div>
+              </div>
+            </div>
+
+            <!-- Progress Bar -->
+            <div class="w-full">
+              <div class="flex items-center justify-between mb-2">
+                <span class="text-white/60 text-xs">{{ formatTime(currentTime) || '0:00' }}</span>
+                <span class="text-white/60 text-xs">{{ formatTime(duration) || '0:00' }}</span>
+              </div>
+              <div
+                class="w-full h-1 bg-white/20 rounded-full cursor-pointer"
+                @click="seekToClick">
+                <div
+                  class="h-full bg-white rounded-full transition-all duration-300"
+                  :style="{ width: progress + '%' }"
+                />
+              </div>
+            </div>
+
+            <!-- Bottom Control Buttons -->
+            <div class="flex items-center justify-center gap-4 mt-4">
+              <button
+                class="w-10 h-10 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center text-white transition-all hover:bg-white/30 active:scale-95"
+                :disabled="isFirstVerse"
+                :class="{ 'opacity-50': isFirstVerse }"
+                @click="previousVerse">
+                <UIcon name="i-heroicons-backward" class="w-5 h-5" />
+              </button>
+
+              <button
+                class="w-10 h-10 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center text-white transition-all hover:bg-white/30 active:scale-95"
+                :disabled="isLastVerse"
+                :class="{ 'opacity-50': isLastVerse }"
+                @click="nextVerse">
+                <UIcon name="i-heroicons-forward" class="w-5 h-5" />
+              </button>
+
+              <button
+                class="w-10 h-10 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center text-white transition-all hover:bg-white/30 active:scale-95"
+                @click="showSurahList = true">
+                <UIcon name="i-heroicons-list-bullet" class="w-5 h-5" />
               </button>
             </div>
           </div>
         </div>
 
-        <!-- Track Info -->
-        <div class="text-center mb-8">
-          <h2 class="text-xl font-bold text-slate-800 dark:text-slate-100 mb-1">
-            {{ getCurrentSurahName().split('.')[1]?.trim() || 'อัล-ฟาติหะฮฺ' }}
-          </h2>
-          <p class="text-slate-700 dark:text-slate-400">
-            เสียงแปลโดย {{ getCurrentReciterName }}
-          </p>
-          
-          <!-- Enhanced Status Indicator -->
-          <div v-if="error" class="mt-2 px-3 py-1 bg-red-100 dark:bg-red-900/30 rounded-full">
-            <p class="text-red-600 dark:text-red-400 text-sm">
-              เกิดข้อผิดพลาด - กรุณาลองใหม่
-            </p>
-          </div>
-          
-          <div v-else-if="isBuffering || isLoading" class="mt-2 px-3 py-1 bg-blue-100 dark:bg-blue-900/30 rounded-full">
-            <p class="text-blue-600 dark:text-blue-400 text-sm">
-              กำลังโหลดเสียง... {{ Math.round(loadProgress) }}%
-              <span v-if="networkType === 'cellular'" class="ml-1">(📱 เซลลูลาร์)</span>
-            </p>
+<!-- Tab Navigation -->
+        <div class="px-0 mb-6">
+          <div class="flex bg-white/50 dark:bg-slate-700/50 rounded-lg p-1 backdrop-blur-sm">
+            <button
+              class="flex-1 py-2 px-4 text-sm font-medium rounded-md transition-all"
+              :class="activeTab === 'playing' ? 'bg-white dark:bg-slate-600 text-slate-800 dark:text-slate-100 shadow-sm' : 'text-slate-600 dark:text-slate-400'"
+              @click="activeTab = 'playing'">
+              กำลังฟัง
+            </button>
+            <button
+              class="flex-1 py-2 px-4 text-sm font-medium rounded-md transition-all"
+              :class="activeTab === 'reciters' ? 'bg-white dark:bg-slate-600 text-slate-800 dark:text-slate-100 shadow-sm' : 'text-slate-600 dark:text-slate-400'"
+              @click="activeTab = 'reciters'">
+              ผู้อ่าน
+            </button>
           </div>
         </div>
 
-        <!-- Primary Controls -->
-        <div class="flex items-center justify-center gap-8 mb-6">
-          <button
-            class="w-12 h-12 rounded-full bg-white/80 dark:bg-slate-700 flex items-center justify-center text-slate-800 dark:text-slate-300 backdrop-blur-sm shadow-sm"
-            :disabled="isFirstVerse" :class="{ 'opacity-50': isFirstVerse }" @click="previousVerse">
-            <UIcon name="i-heroicons-backward" class="w-6 h-6" />
-          </button>
+        <!-- Tab Content -->
+        <div v-if="activeTab === 'playing'">
+          <!-- Surah Cards List -->
+          <div class="mt-2">
+          <div class="mb-4">
+            <h2 class="text-lg font-semibold text-slate-800 dark:text-slate-100 mb-2">ซูเราะฮ์ทั้งหมด</h2>
+            <p class="text-sm text-slate-600 dark:text-slate-400">เลือกซูเราะฮ์ที่คุณต้องการฟัง</p>
+          </div>
 
-          <button
-            class="w-12 h-12 rounded-full bg-white/80 dark:bg-slate-700 flex items-center justify-center text-slate-800 dark:text-slate-300 backdrop-blur-sm shadow-sm"
-            :disabled="isLastVerse" :class="{ 'opacity-50': isLastVerse }" @click="nextVerse">
-            <UIcon name="i-heroicons-forward" class="w-6 h-6" />
-          </button>
+          <div class="space-y-3 max-h-64 overflow-y-auto">
+            <div
+              v-for="surah in surahs.slice(0, 10)"
+              :key="surah.id"
+              class="relative rounded-2xl overflow-hidden cursor-pointer transition-transform active:scale-98"
+              @click="selectAndPlaySurahFromCard(surah.id)">
+              <!-- Background inspired by hero section -->
+              <div class="bg-gradient-to-r from-indigo-500 to-purple-600 p-4">
+                <!-- Content -->
+                <div class="flex items-center justify-between">
+                  <div class="flex items-center flex-1">
+                    <!-- Surah thumbnail similar to track info -->
+                    <div class="w-12 h-12 bg-white/20 rounded-lg flex items-center justify-center mr-3">
+                      <span class="text-white font-bold text-sm">{{ surah.id }}</span>
+                    </div>
+                    <div class="flex-1">
+                      <h3 class="text-white font-semibold mb-1">
+                        {{ surah.thaiName }}
+                      </h3>
+                      <div class="flex items-center text-white/70 text-xs">
+                        <span>{{ surah.versesCount }} อายะห์</span>
+                        <span class="mx-2">•</span>
+                        <span v-if="surah.duration">{{ formatDuration(surah.duration) }}</span>
+                        <span v-else>-</span>
+                      </div>
+                    </div>
+                  </div>
 
-          <button
-            class="w-12 h-12 rounded-full bg-white/80 dark:bg-slate-700 flex items-center justify-center text-slate-800 dark:text-slate-300 backdrop-blur-sm shadow-sm"
-            @click="showSurahList = true">
-            <UIcon name="i-heroicons-list-bullet" class="w-6 h-6" />
-          </button>
+                  <!-- Play button -->
+                  <button
+                    class="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center hover:bg-white/30 transition-colors"
+                    @click.stop="selectAndPlaySurahFromCard(surah.id)">
+                    <UIcon
+                      :name="currentSurah === surah.id && isPlaying ? 'i-heroicons-pause' : 'i-heroicons-play'"
+                      class="w-5 h-5 text-white"
+                      :class="{ 'ml-0.5': !(currentSurah === surah.id && isPlaying) }" />
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+          </div>
         </div>
 
-        <!-- Mobile Reciter Selector -->
-        <div class="flex justify-center mb-6">
-          <ReciterSelector 
-            variant="mobile" 
-            button-class="w-full max-w-xs bg-white/80 dark:bg-slate-700 backdrop-blur-sm shadow-sm"
-            @reciter-changed="onReciterChanged" 
-          />
+        <!-- Reciter Selection Tab Content -->
+        <div v-else-if="activeTab === 'reciters'" class="mt-2">
+        <div class="mb-4">
+          <h2 class="text-lg font-semibold text-slate-800 dark:text-slate-100 mb-2">เลือกผู้อ่าน</h2>
+          <p class="text-sm text-slate-600 dark:text-slate-400">เลือกเสียงที่คุณต้องการฟัง</p>
         </div>
 
-        <!-- Secondary Controls -->
-        <div class="flex items-center justify-center gap-8">
-          <button
-            class="w-10 h-10 rounded-full bg-white/60 dark:bg-slate-700/70 flex items-center justify-center text-slate-700 dark:text-slate-400 backdrop-blur-sm"
-            @click="cycleRepeatMode">
-            <UIcon name="i-heroicons-arrow-path" class="w-5 h-5" />
-          </button>
+        <div class="space-y-3">
+          <div
+            v-for="reciter in availableReciters"
+            :key="reciter.id"
+            class="relative rounded-2xl overflow-hidden cursor-pointer transition-transform active:scale-98"
+            @click="selectReciter(reciter.id)">
+            <!-- Background Card -->
+            <div class="bg-gradient-to-r from-indigo-500 to-purple-600 p-6">
+              <!-- Content -->
+              <div class="flex items-center justify-between">
+                <div class="flex-1">
+                  <div class="flex items-center mb-2">
+                    <div class="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center mr-3">
+                      <UIcon name="i-heroicons-microphone" class="w-6 h-6 text-white" />
+                    </div>
+                    <div>
+                      <h3 class="text-white font-semibold text-lg mb-1">
+                        {{ reciter.name }}
+                      </h3>
+                      <div class="flex items-center">
+                        <div v-if="currentReciterId === parseInt(reciter.id)" class="flex items-center text-white/80 text-sm">
+                          <UIcon name="i-heroicons-check-circle" class="w-4 h-4 mr-1" />
+                          กำลังใช้งาน
+                        </div>
+                        <div v-else class="text-white/60 text-sm">
+                          แตะเพื่อเลือก
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
 
-          <button
-            class="w-10 h-10 rounded-full bg-white/60 dark:bg-slate-700/70 flex items-center justify-center text-slate-700 dark:text-slate-400 backdrop-blur-sm">
-            <UIcon name="i-heroicons-plus" class="w-5 h-5" />
-          </button>
-
-          <button
-            class="w-10 h-10 rounded-full bg-white/60 dark:bg-slate-700/70 flex items-center justify-center text-slate-700 dark:text-slate-400 backdrop-blur-sm"
-            @click="toggleMute">
-            <UIcon name="i-heroicons-adjustments-horizontal" class="w-5 h-5" />
-          </button>
-
-          <button
-            class="w-10 h-10 rounded-full bg-white/60 dark:bg-slate-700/70 flex items-center justify-center text-slate-700 dark:text-slate-400 backdrop-blur-sm">
-            <UIcon name="i-heroicons-arrow-path-rounded-square" class="w-5 h-5" />
-          </button>
+                <!-- Selection Indicator -->
+                <div class="flex items-center">
+                  <div v-if="currentReciterId === parseInt(reciter.id)" class="w-6 h-6 bg-white rounded-full flex items-center justify-center">
+                    <UIcon name="i-heroicons-check" class="w-4 h-4 text-indigo-500" />
+                  </div>
+                  <div v-else class="w-6 h-6 border-2 border-white/40 rounded-full" />
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
+        </div>
+
       </main>
 
       <!-- Surah Selection Modal -->
@@ -296,12 +396,16 @@ v-if="!isLoading && !error" :name="isPlaying ? 'i-heroicons-pause' : 'i-heroicon
             <div class="flex items-center justify-between mb-6">
               <h2 class="text-2xl font-bold text-slate-900 dark:text-slate-100">เพลย์ลิสต์</h2>
               <div class="flex items-center gap-4">
-                <!-- Desktop Reciter Selector -->
-                <ReciterSelector 
-                  variant="desktop" 
-                  button-class=""
-                  @reciter-changed="onReciterChanged" 
-                />
+                <!-- Desktop Reciter Selector - Simple Dropdown -->
+                <div class="relative">
+                  <select
+                    class="px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 text-sm"
+                    :value="currentReciterId"
+                    @change="onDesktopReciterChange">
+                    <option value="1">บรรจง โซะมณี</option>
+                    <option value="2">อุมัร สุจิตวรรณศรี</option>
+                  </select>
+                </div>
                 <button class="text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100">
                   <span class="text-sm text-slate-500 dark:text-slate-400">ทั้งหมด {{ surahs.length }} รายการ</span>
                 </button>
@@ -442,25 +546,23 @@ const {
   isPlaying,
   isLoading,
   currentTime,
+  duration,
   currentSurah,
   currentReciter,
   isFirstVerse,
   isLastVerse,
   progress,
-  repeatMode,
   loadAudio,
   togglePlay,
   previousVerse,
   nextVerse,
   seekToProgress,
-  toggleMute,
   formatTime,
   updateMediaMetadata,
   setAutoPlayMetadataCallback,
   error,
   // Enhanced streaming state
   isBuffering,
-  loadProgress,
   networkType
 } = useAudioPlayer();
 
@@ -470,6 +572,21 @@ const currentReciterId = ref<number>(1); // Default to first reciter
 
 // Modal state
 const showSurahList = ref(false);
+
+// Tab state
+const activeTab = ref('playing');
+
+// Mobile reciter data
+const availableReciters = ref([
+  {
+    id: "001",
+    name: "บรรจง โซะมณี"
+  },
+  {
+    id: "002",
+    name: "อุมัร สุจิตวรรณศรี"
+  }
+]);
 
 // Computed properties - removed unused computed values
 
@@ -517,22 +634,33 @@ const seekToClick = (event: MouseEvent) => {
 
 // Removed unused volumeClick function
 
-const cycleRepeatMode = () => {
-  const modes: Array<"none" | "one" | "all"> = ["none", "one", "all"];
-  const currentMode = repeatMode.value || "none";
-  const currentIndex = modes.indexOf(currentMode);
-  const nextIndex = (currentIndex + 1) % modes.length;
-  const nextMode = modes[nextIndex] as "none" | "one" | "all";
-  repeatMode.value = nextMode;
-};
 
 // Helper methods
 const getCurrentSurahName = () => {
   return currentSurahName.value;
 };
 
+// Get current surah revelation place in Thai
+const getCurrentSurahRevelationPlace = () => {
+  if (!currentSurah.value) return 'มักกิยะฮ์'; // Default to Makkah
+
+  const surah = getSurahById(currentSurah.value);
+  if (!surah) return 'มักกิยะฮ์';
+
+  // Convert revelationType to Thai
+  return surah.revelationType === 'Meccan' ? 'มักกิยะฮ์' : 'มะดะนียะฮ์';
+};
+
 // Auto-play method for large screen surah selection
 const selectAndPlaySurah = async (surahId: number) => {
+  selectedSurahValue.value = surahId;
+
+  // Auto-play the selected surah
+  await playSelectedAudio();
+};
+
+// Auto-play method for mobile surah cards
+const selectAndPlaySurahFromCard = async (surahId: number) => {
   selectedSurahValue.value = surahId;
 
   // Auto-play the selected surah
@@ -608,6 +736,21 @@ const playSelectedAudio = async () => {
 const selectSurahFromModal = (surahId: number) => {
   selectedSurahValue.value = surahId;
   showSurahList.value = false;
+};
+
+// Select reciter from tab (mobile)
+const selectReciter = async (reciterId: string) => {
+  const numericReciterId = parseInt(reciterId);
+  await onReciterChanged(numericReciterId);
+  // Switch back to playing tab after selection
+  activeTab.value = 'playing';
+};
+
+// Handle desktop reciter selection
+const onDesktopReciterChange = async (event: Event) => {
+  const target = event.target as HTMLSelectElement;
+  const reciterId = parseInt(target.value);
+  await onReciterChanged(reciterId);
 };
 
 // Handle reciter change

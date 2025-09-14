@@ -57,6 +57,12 @@ self.addEventListener('fetch', (event) => {
   const { request } = event
   const url = new URL(request.url)
   
+  // DEVELOPMENT: Skip SW for audio during testing
+  if (url.hostname === 'localhost' && isAudioRequest(request)) {
+    // Let network handle audio requests directly during development
+    return
+  }
+  
   // Handle audio files with special caching strategy
   if (isAudioRequest(request)) {
     event.respondWith(handleAudioRequest(request))

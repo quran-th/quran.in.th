@@ -77,7 +77,7 @@ interface Props {
   buttonClass?: string
 }
 
-const props = withDefaults(defineProps<Props>(), {
+const _props = withDefaults(defineProps<Props>(), {
   variant: 'mobile',
   buttonClass: ''
 })
