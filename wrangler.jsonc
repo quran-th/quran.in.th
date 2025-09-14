@@ -42,8 +42,8 @@
 	 * Environment Variables
 	 * https://developers.cloudflare.com/workers/wrangler/configuration/#environment-variables
 	 */
-	"vars": { 
-		"USE_LOCAL_AUDIO": "false" 
+	"vars": {
+		"USE_LOCAL_AUDIO": "false"
 	}
 	/**
 	 * Note: Use secrets to store sensitive data.

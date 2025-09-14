@@ -43,14 +43,15 @@ export default defineNuxtConfig({
 
   runtimeConfig: {
     // Private keys (only available on server-side)
-    // Note: USE_LOCAL_AUDIO is now handled via Cloudflare env vars in API routes
-    // This fallback is for local development only
-    useLocalAudio: process.env.USE_LOCAL_AUDIO === 'true',
+    // Environment-specific audio handling:
+    // - Development: USE_LOCAL_AUDIO=true (default for local dev)
+    // - Production: USE_LOCAL_AUDIO=false (R2 via Cloudflare Workers)
+    useLocalAudio: process.env.NODE_ENV === 'development' ? true : (process.env.USE_LOCAL_AUDIO === 'true'),
     
     // Public keys (exposed to client-side)
     public: {
-      // Client-side will get this value from API endpoint
-      useLocalAudio: process.env.USE_LOCAL_AUDIO === 'true'
+      // Client determines audio source via environment
+      useLocalAudio: process.env.NODE_ENV === 'development' ? true : (process.env.USE_LOCAL_AUDIO === 'true')
     }
   }
 })

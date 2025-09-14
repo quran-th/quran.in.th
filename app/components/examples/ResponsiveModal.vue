@@ -22,11 +22,11 @@
       >
         <div
           :class="modalClasses"
-          @click.stop
           role="dialog"
           :aria-modal="true"
           :aria-labelledby="titleId"
           :aria-describedby="contentId"
+          @click.stop
         >
           <!-- Modal Header -->
           <header :class="headerClasses">
@@ -47,8 +47,8 @@
             
             <button
               :class="closeButtonClasses"
-              @click="handleClose"
               :aria-label="closeLabel"
+              @click="handleClose"
             >
               <UIcon name="i-heroicons-x-mark" class="w-5 h-5" />
             </button>

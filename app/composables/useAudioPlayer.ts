@@ -1,8 +1,8 @@
+import { Howl } from 'howler'
 import type { AudioPlayerState, VerseTiming } from '~/types/quran'
-import { audioService } from '~/services/audioService'
 
 export const useAudioPlayer = () => {
-  // Reactive state
+  // Reactive state - keeping essential state from original
   const state = reactive<AudioPlayerState>({
     isPlaying: false,
     isLoading: false,
@@ -13,7 +13,7 @@ export const useAudioPlayer = () => {
     currentSurah: null,
     currentReciter: null,
     currentVerse: 1,
-    audioElement: null,
+    audioElement: null, // Will be replaced by Howl instance
     audioFile: null,
     error: null
   })
@@ -22,7 +22,29 @@ export const useAudioPlayer = () => {
   const showTranslation = ref(true)
   const repeatMode = ref<'none' | 'one' | 'all'>('none')
   const playbackRate = ref(1.0)
-  const autoPlay = ref(true) // Auto-play enabled by default
+  const autoPlay = ref(true)
+  
+  // Howler.js specific state
+  const currentHowl = ref<Howl | null>(null)
+  const soundId = ref<number | null>(null)
+  const isBuffering = ref(false)
+
+  // Network type detection (preserved from original)
+  const networkType = ref<'cellular' | 'wifi' | 'unknown'>('unknown')
+  
+  const detectNetworkType = () => {
+    if (!import.meta.client || !('connection' in navigator)) return 'unknown'
+    
+    const connection = (navigator as { connection?: { effectiveType?: string } }).connection
+    if (!connection) return 'unknown'
+    
+    const cellularTypes = ['slow-2g', '2g', '3g']
+    if (connection.effectiveType && cellularTypes.includes(connection.effectiveType)) {
+      return 'cellular'
+    }
+    
+    return 'wifi'
+  }
 
   // Computed properties
   const progress = computed(() => {
@@ -33,7 +55,7 @@ export const useAudioPlayer = () => {
     if (!state.audioFile?.verse_timings) return null
     
     return state.audioFile.verse_timings.find(timing => {
-      const startTime = timing.timestamp_from / 1000 // Convert to seconds
+      const startTime = timing.timestamp_from / 1000
       const endTime = timing.timestamp_to / 1000
       return state.currentTime >= startTime && state.currentTime < endTime
     }) || null
@@ -54,61 +76,11 @@ export const useAudioPlayer = () => {
   const isFirstVerse = computed(() => state.currentTime <= 10)
   const isLastVerse = computed(() => state.currentTime >= (state.duration - 10))
 
-  // Initialize audio element
-  const initAudio = () => {
-    if (!import.meta.client || state.audioElement) return
-
-    const audio = new Audio()
-    audio.preload = 'metadata'
-    audio.crossOrigin = 'anonymous'
-
-    // Event listeners
-    audio.addEventListener('loadstart', () => {
-      state.isLoading = true
-      state.error = null
-    })
-
-    audio.addEventListener('loadedmetadata', () => {
-      state.duration = audio.duration
-      state.isLoading = false
-    })
-
-    audio.addEventListener('timeupdate', () => {
-      state.currentTime = audio.currentTime
-      // Update MediaSession position state periodically
-      if (state.isPlaying && Math.floor(audio.currentTime) % 5 === 0) {
-        updateMediaSessionPositionState()
-      }
-    })
-
-    audio.addEventListener('ended', handleAudioEnd)
-    
-    audio.addEventListener('error', (e) => {
-      state.error = 'Failed to load audio'
-      state.isLoading = false
-      state.isPlaying = false
-      console.error('Audio error:', e)
-    })
-
-    audio.addEventListener('canplaythrough', () => {
-      state.isLoading = false
-    })
-
-    // Volume and rate control
-    audio.volume = state.volume / 100
-    audio.playbackRate = playbackRate.value
-
-    state.audioElement = audio
-    
-    // Initialize MediaSession for background audio
-    initMediaSession()
-  }
-
-  // Initialize MediaSession API for background audio and OS integration
+  // Initialize MediaSession API for native OS controls
   const initMediaSession = () => {
     if (!import.meta.client || !('mediaSession' in navigator)) return
 
-    // Set up media action handlers for lock screen controls
+    // Set up media action handlers
     navigator.mediaSession.setActionHandler('play', () => {
       play()
     })
@@ -136,8 +108,8 @@ export const useAudioPlayer = () => {
     })
   }
 
-  // Update MediaSession metadata with current Surah and reciter info
-  const updateMediaSessionMetadata = (surahName: string, reciterName: string, _surahId: number) => {
+  // Update MediaSession metadata with cover image
+  const updateMediaSessionMetadata = (surahName: string, reciterName: string) => {
     if (!import.meta.client || !('mediaSession' in navigator)) return
 
     navigator.mediaSession.metadata = new MediaMetadata({
@@ -146,6 +118,11 @@ export const useAudioPlayer = () => {
       album: 'อัลกุรอาน - Al-Quran',
       artwork: [
         {
+          src: '/cover.jpg', // Use the cover image from public folder
+          sizes: '512x512',
+          type: 'image/jpeg'
+        },
+        {
           src: '/favicon.ico',
           sizes: '48x48',
           type: 'image/x-icon'
@@ -153,13 +130,16 @@ export const useAudioPlayer = () => {
       ]
     })
 
-    // Update playback state
     navigator.mediaSession.playbackState = state.isPlaying ? 'playing' : 'paused'
   }
 
-  // Update MediaSession position state for progress tracking
+  // Update MediaSession position state for seeking
   const updateMediaSessionPositionState = () => {
-    if (!import.meta.client || !('mediaSession' in navigator) || !state.audioElement) return
+    if (!import.meta.client || !('mediaSession' in navigator)) return
+
+    if (!isFinite(state.duration) || !isFinite(state.currentTime) || !isFinite(playbackRate.value)) {
+      return
+    }
 
     try {
       navigator.mediaSession.setPositionState({
@@ -172,85 +152,179 @@ export const useAudioPlayer = () => {
     }
   }
 
-  // Load and play audio
-  const loadAudio = async (surahId: number, reciterId: number) => {
-    if (!state.audioElement) initAudio()
-    if (!state.audioElement) return
+  // Get audio URL for both environments
+  const getAudioUrl = async (surahId: number, reciterId: number): Promise<string> => {
+    const paddedReciterId = reciterId.toString().padStart(3, '0')
+    return `/api/audio/${paddedReciterId}/${surahId}`
+  }
 
+  // Load audio metadata from local JSON data
+  const loadAudioMetadata = async (surahId: number): Promise<Record<string, unknown> | null> => {
     try {
+      // Import the metadata JSON (this will be bundled with the app)
+      const { default: audioMetadata } = await import('~/data/audioMetadata.json')
+      return audioMetadata[surahId] || null
+    } catch (error) {
+      console.warn('[HowlerPlayer] Could not load audio metadata:', error)
+      return null
+    }
+  }
+
+  // Load and configure Howl for streaming large audio files
+  const loadAudio = async (surahId: number, reciterId: number) => {
+    try {
+      // Cleanup previous Howl instance
+      if (currentHowl.value) {
+        currentHowl.value.unload()
+        currentHowl.value = null
+        soundId.value = null
+      }
+
       state.isLoading = true
       state.error = null
       state.currentSurah = surahId
       state.currentReciter = reciterId
 
-      // Fetch audio metadata
-      const audioFile = await audioService.fetchAudioMetadata(reciterId, surahId)
-      state.audioFile = audioFile
+      // Load metadata for the surah
+      const metadata = await loadAudioMetadata(surahId)
+      if (metadata) {
+        // Create a minimal AudioFile object for compatibility
+        state.audioFile = {
+          id: surahId,
+          chapter_id: surahId,
+          file_size: metadata.file_size || 0,
+          format: metadata.format || 'ogg',
+          audio_url: '',  // Will be set below
+          duration: metadata.duration || 0,
+          verse_timings: [] // Empty for now - verse timings not available in current metadata
+        }
+      }
 
-      // Get audio URL (cached or direct)
-      const audioUrl = await audioService.getAudioUrl(surahId, reciterId)
+      // Get audio URL (handles dev/production environments)
+      const audioUrl = await getAudioUrl(surahId, reciterId)
       
-      // Load the audio
-      state.audioElement.src = audioUrl
-      await new Promise<void>((resolve, reject) => {
-        const audio = state.audioElement!
-        const handleLoad = () => {
-          audio.removeEventListener('canplaythrough', handleLoad)
-          audio.removeEventListener('error', handleError)
-          resolve()
+      // Update the audio file URL
+      if (state.audioFile) {
+        state.audioFile.audio_url = audioUrl
+      }
+      
+      // Detect network type for optimization
+      networkType.value = detectNetworkType()
+      
+      // Create new Howl instance optimized for large file streaming
+      const howl = new Howl({
+        src: [audioUrl],
+        html5: true, // CRITICAL: Use HTML5 Audio for large files and streaming
+        preload: networkType.value === 'cellular' ? 'metadata' : 'auto',
+        format: ['ogg', 'mp3'], // Explicit format support
+        onload: () => {
+          state.duration = howl.duration()
+          state.isLoading = false
+          console.log('[HowlerPlayer] Audio loaded successfully, duration:', state.duration)
+        },
+        onloaderror: (id, error) => {
+          console.error('[HowlerPlayer] Load error:', error)
+          state.error = 'Failed to load audio file'
+          state.isLoading = false
+        },
+        onplay: () => {
+          state.isPlaying = true
+          isBuffering.value = false
+          
+          // Update MediaSession
+          if (import.meta.client && 'mediaSession' in navigator) {
+            navigator.mediaSession.playbackState = 'playing'
+            updateMediaSessionPositionState()
+          }
+          
+          console.log('[HowlerPlayer] Playback started')
+        },
+        onpause: () => {
+          state.isPlaying = false
+          
+          // Update MediaSession
+          if (import.meta.client && 'mediaSession' in navigator) {
+            navigator.mediaSession.playbackState = 'paused'
+          }
+          
+          console.log('[HowlerPlayer] Playback paused')
+        },
+        onend: () => {
+          state.isPlaying = false
+          handleAudioEnd()
+          console.log('[HowlerPlayer] Playback ended')
+        },
+        onstop: () => {
+          state.isPlaying = false
+          console.log('[HowlerPlayer] Playback stopped')
+        },
+        onplayerror: (id, error) => {
+          console.error('[HowlerPlayer] Play error:', error)
+          state.error = 'Playback failed'
+          state.isPlaying = false
+          
+          // Handle unlock requirement on mobile
+          howl.once('unlock', () => {
+            howl.play()
+          })
         }
-        const handleError = () => {
-          audio.removeEventListener('canplaythrough', handleLoad)
-          audio.removeEventListener('error', handleError)
-          reject(new Error('Failed to load audio'))
-        }
-        
-        audio.addEventListener('canplaythrough', handleLoad)
-        audio.addEventListener('error', handleError)
       })
+
+      // Store the Howl instance
+      currentHowl.value = howl
       
-      state.isLoading = false
+      // Set up time tracking interval (Howler.js doesn't provide timeupdate)
+      if (import.meta.client) {
+        const updateTime = () => {
+          if (currentHowl.value && state.isPlaying) {
+            const seek = currentHowl.value.seek() as number
+            if (typeof seek === 'number' && isFinite(seek)) {
+              state.currentTime = seek
+              
+              // Update MediaSession position periodically
+              if (Math.floor(seek) % 3 === 0) {
+                updateMediaSessionPositionState()
+              }
+            }
+          }
+          
+          if (state.isPlaying || state.isLoading) {
+            requestAnimationFrame(updateTime)
+          }
+        }
+        requestAnimationFrame(updateTime)
+      }
+      
     } catch (error) {
-      console.error('Error loading audio:', error)
+      console.error('[HowlerPlayer] Error loading audio:', error)
       state.error = 'Failed to load audio'
       state.isLoading = false
     }
   }
 
-  // Update MediaSession metadata when audio is loaded
-  const updateMediaMetadata = (surahName: string, reciterName: string) => {
-    updateMediaSessionMetadata(surahName, reciterName, state.currentSurah || 1)
-  }
-
   // Playback controls
   const play = async () => {
-    if (!state.audioElement) return
+    if (!currentHowl.value) return
     
     try {
-      await state.audioElement.play()
-      state.isPlaying = true
+      isBuffering.value = true
+      soundId.value = currentHowl.value.play() as number
       
-      // Update MediaSession playback state
-      if (import.meta.client && 'mediaSession' in navigator) {
-        navigator.mediaSession.playbackState = 'playing'
-        updateMediaSessionPositionState()
-      }
+      // Set volume and rate
+      currentHowl.value.volume(state.volume / 100)
+      currentHowl.value.rate(playbackRate.value)
+      
     } catch (error) {
-      console.error('Error playing audio:', error)
+      console.error('[HowlerPlayer] Error playing audio:', error)
       state.error = 'Failed to play audio'
+      isBuffering.value = false
     }
   }
 
   const pause = () => {
-    if (!state.audioElement) return
+    if (!currentHowl.value) return
     
-    state.audioElement.pause()
-    state.isPlaying = false
-    
-    // Update MediaSession playback state
-    if (import.meta.client && 'mediaSession' in navigator) {
-      navigator.mediaSession.playbackState = 'paused'
-    }
+    currentHowl.value.pause()
   }
 
   const togglePlay = async () => {
@@ -261,19 +335,57 @@ export const useAudioPlayer = () => {
     }
   }
 
-  // Seek controls
+  // Seeking
   const seekTo = (seconds: number) => {
-    if (!state.audioElement) return
+    if (!currentHowl.value) return
     
-    state.audioElement.currentTime = Math.max(0, Math.min(seconds, state.duration))
+    if (!isFinite(seconds) || !isFinite(state.duration) || state.duration <= 0) {
+      console.warn('[HowlerPlayer] Invalid seek parameters:', { seconds, duration: state.duration })
+      return
+    }
+    
+    const seekTime = Math.max(0, Math.min(seconds, state.duration))
+    
+    if (isFinite(seekTime)) {
+      currentHowl.value.seek(seekTime)
+      state.currentTime = seekTime
+    }
   }
 
   const seekToProgress = (progressPercent: number) => {
+    if (!isFinite(progressPercent) || progressPercent < 0 || progressPercent > 100) {
+      console.warn('[HowlerPlayer] Invalid progress percentage:', progressPercent)
+      return
+    }
+    
     const seconds = (progressPercent / 100) * state.duration
     seekTo(seconds)
   }
 
-  // Verse navigation
+  // Volume controls
+  const setVolume = (volume: number) => {
+    state.volume = Math.max(0, Math.min(100, volume))
+    if (currentHowl.value) {
+      currentHowl.value.volume(state.volume / 100)
+    }
+  }
+
+  const toggleMute = () => {
+    state.isMuted = !state.isMuted
+    if (currentHowl.value) {
+      currentHowl.value.mute(state.isMuted)
+    }
+  }
+
+  // Playback rate
+  const setPlaybackRate = (rate: number) => {
+    playbackRate.value = Math.max(0.25, Math.min(2.0, rate))
+    if (currentHowl.value) {
+      currentHowl.value.rate(playbackRate.value)
+    }
+  }
+
+  // Verse navigation (preserved from original)
   const goToVerse = (verseNumber: number) => {
     if (!state.audioFile?.verse_timings) return
     
@@ -281,58 +393,32 @@ export const useAudioPlayer = () => {
       timing => timing.verse_key.endsWith(`:${verseNumber}`)
     )
     
-    if (verseTiming) {
+    if (verseTiming && verseTiming.timestamp_from) {
       const startTime = verseTiming.timestamp_from / 1000
-      seekTo(startTime)
-      state.currentVerse = verseNumber
+      
+      if (isFinite(startTime) && startTime >= 0) {
+        seekTo(startTime)
+        state.currentVerse = verseNumber
+      }
     }
   }
 
   const previousVerse = () => {
-    // Rewind 10 seconds
     const newTime = Math.max(0, state.currentTime - 10)
     seekTo(newTime)
   }
 
   const nextVerse = () => {
-    // Fast forward 10 seconds
     const newTime = Math.min(state.duration, state.currentTime + 10)
     seekTo(newTime)
   }
 
-  // Volume controls
-  const setVolume = (volume: number) => {
-    state.volume = Math.max(0, Math.min(100, volume))
-    if (state.audioElement) {
-      state.audioElement.volume = state.volume / 100
-    }
-  }
-
-  const toggleMute = () => {
-    state.isMuted = !state.isMuted
-    if (state.audioElement) {
-      state.audioElement.muted = state.isMuted
-    }
-  }
-
-  // Playback rate
-  const setPlaybackRate = (rate: number) => {
-    playbackRate.value = Math.max(0.25, Math.min(2.0, rate))
-    if (state.audioElement) {
-      state.audioElement.playbackRate = playbackRate.value
-    }
-  }
-
-  // Handle audio end
+  // Handle audio end with repeat modes
   const handleAudioEnd = () => {
-    state.isPlaying = false
-    
     if (repeatMode.value === 'one') {
-      // Restart current surah
       seekTo(0)
       play()
     } else if (repeatMode.value === 'all' || autoPlay.value) {
-      // Auto-play next surah or repeat all
       playNextSurah()
     }
   }
@@ -343,44 +429,37 @@ export const useAudioPlayer = () => {
     
     const nextSurahId = state.currentSurah + 1
     
-    // Check if we've reached the end (Surah 114 is the last)
     if (nextSurahId > 114) {
       if (repeatMode.value === 'all') {
-        // Start over from Surah 1
         await loadAudio(1, state.currentReciter)
         await play()
-        // Update MediaSession metadata for first surah
-        updateAutoPlayMetadata(1, state.currentReciter)
+        // Call metadata callback if set
+        if (onAutoPlayMetadataUpdate) {
+          onAutoPlayMetadataUpdate(1, state.currentReciter)
+        }
       }
-      // If just auto-play (not repeat all), stop at the end
       return
     }
     
-    // Load and play next surah
     try {
       await loadAudio(nextSurahId, state.currentReciter)
       await play()
-      // Update MediaSession metadata for next surah
-      updateAutoPlayMetadata(nextSurahId, state.currentReciter)
+      // Call metadata callback if set
+      if (onAutoPlayMetadataUpdate) {
+        onAutoPlayMetadataUpdate(nextSurahId, state.currentReciter)
+      }
     } catch (error) {
-      console.error('Error loading next surah:', error)
+      console.error('[HowlerPlayer] Error loading next surah:', error)
       state.error = 'Failed to load next surah'
     }
   }
 
-  // Callback for external metadata updates during auto-play
+  // Callback for external metadata updates during auto-play (preserved from original)
   let onAutoPlayMetadataUpdate: ((surahId: number, reciterId: number) => void) | null = null
   
   // Set callback for metadata updates
   const setAutoPlayMetadataCallback = (callback: (surahId: number, reciterId: number) => void) => {
     onAutoPlayMetadataUpdate = callback
-  }
-  
-  // Update MediaSession metadata during auto-play transitions
-  const updateAutoPlayMetadata = (surahId: number, reciterId: number) => {
-    if (onAutoPlayMetadataUpdate) {
-      onAutoPlayMetadataUpdate(surahId, reciterId)
-    }
   }
 
   // Format time helper
@@ -392,17 +471,17 @@ export const useAudioPlayer = () => {
 
   // Cleanup
   const cleanup = () => {
-    if (state.audioElement) {
-      state.audioElement.pause()
-      state.audioElement.src = ''
-      state.audioElement = null
+    if (currentHowl.value) {
+      currentHowl.value.unload()
+      currentHowl.value = null
+      soundId.value = null
     }
   }
 
-  // Initialize on client
+  // Initialize MediaSession on client
   onMounted(() => {
     if (import.meta.client) {
-      initAudio()
+      initMediaSession()
     }
   })
 
@@ -417,6 +496,10 @@ export const useAudioPlayer = () => {
     repeatMode,
     playbackRate,
     autoPlay,
+    
+    // Howler.js specific state
+    isBuffering,
+    networkType,
     
     // Computed
     progress,
@@ -441,7 +524,8 @@ export const useAudioPlayer = () => {
     setPlaybackRate,
     formatTime,
     cleanup,
-    updateMediaMetadata,
+    updateMediaSessionMetadata,
+    updateMediaMetadata: updateMediaSessionMetadata, // Alias for backward compatibility
     playNextSurah,
     setAutoPlayMetadataCallback
   }

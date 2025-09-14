@@ -14,8 +14,8 @@
     <PlayerHeader 
       :current-surah="currentSurah"
       :is-dark="isDark"
-      @toggle-dark-mode="toggleDarkMode"
       class="responsive-header"
+      @toggle-dark-mode="toggleDarkMode"
     />
     
     <!-- Mobile Layout: Circular Player Interface -->
@@ -26,9 +26,9 @@
         :current-reciter="currentReciter"
         :audio-state="audioState"
         :surahs="surahs"
+        class="mobile-layout"
         @surah-select="handleSurahSelect"
         @play-toggle="handlePlayToggle"
-        class="mobile-layout"
       />
       
       <template #fallback>
@@ -44,9 +44,9 @@
         :current-reciter="currentReciter"
         :audio-state="audioState"
         :surahs="surahs"
+        class="desktop-layout"
         @surah-select="handleSurahSelect"
         @play-toggle="handlePlayToggle"
-        class="desktop-layout"
       />
       
       <template #fallback>
@@ -58,10 +58,10 @@
     <SharedAudioControls
       :audio-state="audioState"
       :current-surah="currentSurah"
+      class="responsive-controls"
       @play-toggle="handlePlayToggle"
       @seek="handleSeek"
       @volume-change="handleVolumeChange"
-      class="responsive-controls"
     />
   </div>
 </template>

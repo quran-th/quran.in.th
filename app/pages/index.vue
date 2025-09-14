@@ -37,10 +37,12 @@
             <!-- Progress Ring -->
             <svg class="w-72 h-72 transform -rotate-90" viewBox="0 0 200 200">
               <!-- Background Ring -->
-              <circle cx="100" cy="100" r="90" stroke="rgba(100, 116, 139, 0.3)" stroke-width="4" fill="none"
+              <circle
+cx="100" cy="100" r="90" stroke="rgba(100, 116, 139, 0.3)" stroke-width="4" fill="none"
                 class="dark:stroke-slate-600" />
               <!-- Progress Ring -->
-              <circle cx="100" cy="100" r="90" stroke="#6366f1" stroke-width="4" fill="none"
+              <circle
+cx="100" cy="100" r="90" stroke="#6366f1" stroke-width="4" fill="none"
                 :stroke-dasharray="`${565.48}`" :stroke-dashoffset="`${565.48 - (565.48 * progress / 100)}`"
                 class="transition-all duration-300 dark:stroke-indigo-400" stroke-linecap="round" />
             </svg>
@@ -59,12 +61,12 @@
               <button
                 class="relative z-10 w-16 h-16 bg-indigo-500 rounded-full flex items-center justify-center text-white shadow-lg transition-transform active:scale-95"
                 :disabled="!currentSurah || !currentReciter" 
-                @click="networkError && retryCount >= 3 ? manualRetry() : togglePlay()"
-                :class="{ 'bg-red-500': networkError, 'bg-orange-500': isBuffering && !isLoading }">
-                <UIcon v-if="!isLoading && !isBuffering && !networkError" :name="isPlaying ? 'i-heroicons-pause' : 'i-heroicons-play'" class="w-6 h-6"
+                :class="{ 'bg-red-500': error }"
+                @click="togglePlay()">
+                <UIcon
+v-if="!isLoading && !error" :name="isPlaying ? 'i-heroicons-pause' : 'i-heroicons-play'" class="w-6 h-6"
                   :class="{ 'ml-1': !isPlaying }" />
-                <UIcon v-else-if="networkError && retryCount >= 3" name="i-heroicons-arrow-path" class="w-6 h-6" />
-                <UIcon v-else-if="networkError" name="i-heroicons-exclamation-triangle" class="w-6 h-6" />
+                <UIcon v-else-if="error" name="i-heroicons-exclamation-triangle" class="w-6 h-6" />
                 <div v-else class="w-6 h-6 animate-spin rounded-full border-2 border-white border-t-transparent" />
               </button>
             </div>
@@ -80,17 +82,17 @@
             เสียงแปลโดย {{ getCurrentReciterName }}
           </p>
           
-          <!-- Network Status Indicator -->
-          <div v-if="networkError" class="mt-2 px-3 py-1 bg-red-100 dark:bg-red-900/30 rounded-full">
+          <!-- Enhanced Status Indicator -->
+          <div v-if="error" class="mt-2 px-3 py-1 bg-red-100 dark:bg-red-900/30 rounded-full">
             <p class="text-red-600 dark:text-red-400 text-sm">
-              <span v-if="retryCount < 3">เชื่อมต่อเน็ตเวิร์คขัดข้อง (ลองใหม่ {{ retryCount }}/3 ครั้ง)</span>
-              <span v-else>เชื่อมต่อล้มเหลว - กดปุ่มเล่นเพื่อลองใหม่</span>
+              เกิดข้อผิดพลาด - กรุณาลองใหม่
             </p>
           </div>
           
-          <div v-else-if="isBuffering && !isLoading" class="mt-2 px-3 py-1 bg-orange-100 dark:bg-orange-900/30 rounded-full">
-            <p class="text-orange-600 dark:text-orange-400 text-sm">
+          <div v-else-if="isBuffering || isLoading" class="mt-2 px-3 py-1 bg-blue-100 dark:bg-blue-900/30 rounded-full">
+            <p class="text-blue-600 dark:text-blue-400 text-sm">
               กำลังโหลดเสียง... {{ Math.round(loadProgress) }}%
+              <span v-if="networkType === 'cellular'" class="ml-1">(📱 เซลลูลาร์)</span>
             </p>
           </div>
         </div>
@@ -120,8 +122,8 @@
         <div class="flex justify-center mb-6">
           <ReciterSelector 
             variant="mobile" 
-            @reciter-changed="onReciterChanged"
-            button-class="w-full max-w-xs bg-white/80 dark:bg-slate-700 backdrop-blur-sm shadow-sm" 
+            button-class="w-full max-w-xs bg-white/80 dark:bg-slate-700 backdrop-blur-sm shadow-sm"
+            @reciter-changed="onReciterChanged" 
           />
         </div>
 
@@ -152,15 +154,18 @@
       </main>
 
       <!-- Surah Selection Modal -->
-      <div v-if="showSurahList" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-end"
+      <div
+v-if="showSurahList" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-end"
         @click="showSurahList = false">
-        <div class="w-full bg-white dark:bg-slate-800 rounded-t-3xl max-h-[80vh] flex flex-col" :class="{
+        <div
+class="w-full bg-white dark:bg-slate-800 rounded-t-3xl max-h-[80vh] flex flex-col" :class="{
           'animate-slide-up': showSurahList,
         }" @click.stop>
           <!-- Modal Header -->
           <div class="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
             <h3 class="text-xl font-semibold text-slate-800 dark:text-slate-100">เลือกซูเราะห์</h3>
-            <button class="w-8 h-8 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center"
+            <button
+class="w-8 h-8 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center"
               @click="showSurahList = false">
               <UIcon name="i-heroicons-x-mark" class="w-5 h-5 text-slate-600 dark:text-slate-400" />
             </button>
@@ -178,7 +183,8 @@
 
             <!-- Scrollable List -->
             <div class="overflow-y-auto max-h-96">
-              <div v-for="surah in surahs" :key="surah.id"
+              <div
+v-for="surah in surahs" :key="surah.id"
                 class="px-6 py-4 border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors cursor-pointer"
                 :class="{
                   'bg-indigo-50 dark:bg-indigo-900/20': currentSurah === surah.id,
@@ -202,7 +208,8 @@
                     <div class="text-sm text-slate-500 dark:text-slate-400">
                       {{ surah.englishName }} • {{ surah.versesCount }} อายะห์ •
                       <span v-if="surah.duration">{{ formatDuration(surah.duration) }} • </span>
-                      <span class="inline-flex px-2 py-0.5 text-xs rounded-full" :class="surah.revelationType === 'Meccan'
+                      <span
+class="inline-flex px-2 py-0.5 text-xs rounded-full" :class="surah.revelationType === 'Meccan'
                         ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/50 dark:text-amber-300'
                         : 'bg-green-100 text-green-700 dark:bg-green-900/50 dark:text-green-300'">
                         {{ surah.revelationType === 'Meccan' ? 'มักกะห์' : 'มะดีนะห์' }}
@@ -218,7 +225,7 @@
     </div>
 
     <!-- Large Screen Layout -->
-    <div class="hidden md:block min-h-screen bg-[#e7e8f3] dark:bg-slate-900 ">
+    <div class="hidden md:block min-h-screen bg-slate-50 dark:bg-slate-900 ">
 
       <!-- Large Screen Header -->
       <header class="p-6">
@@ -231,7 +238,8 @@
               <p class="text-slate-500 dark:text-slate-400">ฟัง & ใคร่ครวญ</p>
             </div>
             <div class="flex items-center gap-3">
-              <button class="w-8 h-8 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center"
+              <button
+class="w-8 h-8 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center"
                 @click="toggleDarkMode">
                 <UIcon :name="isDark ? 'i-heroicons-sun' : 'i-heroicons-moon'" class="w-4 h-4" />
               </button>
@@ -264,14 +272,14 @@
                   <div class="flex gap-4">
                     <button
                       class="px-6 py-2 bg-black text-white rounded-full font-medium hover:bg-black/90 transition-colors flex items-center gap-2 cursor-pointer"
-                      :disabled="isLoading || isBuffering" @click="playFromHero"
-                      :class="{ 'bg-red-600 hover:bg-red-700': networkError, 'bg-orange-600 hover:bg-orange-700': isBuffering && !isLoading }">
-                      <UIcon v-if="!isLoading && !isBuffering && !networkError" :name="isPlaying ? 'i-heroicons-pause' : 'i-heroicons-play'" class="w-5 h-5"
+                      :disabled="isLoading" :class="{ 'bg-red-600 hover:bg-red-700': error }"
+                      @click="playFromHero">
+                      <UIcon
+v-if="!isLoading && !error" :name="isPlaying ? 'i-heroicons-pause' : 'i-heroicons-play'" class="w-5 h-5"
                         :class="{ 'ml-0.5': !isPlaying }" />
-                      <UIcon v-else-if="networkError && retryCount >= 3" name="i-heroicons-arrow-path" class="w-5 h-5" />
-                      <UIcon v-else-if="networkError" name="i-heroicons-exclamation-triangle" class="w-5 h-5" />
+                      <UIcon v-else-if="error" name="i-heroicons-exclamation-triangle" class="w-5 h-5" />
                       <div v-else class="w-5 h-5 animate-spin rounded-full border-2 border-white border-t-transparent" />
-                      {{ networkError && retryCount >= 3 ? 'ลองใหม่' : networkError ? 'เกิดข้อผิดพลาด' : isBuffering ? 'BUFFERING' : isPlaying ? 'หยุด' : 'เริ่ม' }}
+                      {{ error ? 'เกิดข้อผิดพลาด' : isLoading ? 'กำลังโหลด' : isPlaying ? 'หยุด' : 'เริ่ม' }}
                     </button>
                   </div>
                 </div>
@@ -291,8 +299,8 @@
                 <!-- Desktop Reciter Selector -->
                 <ReciterSelector 
                   variant="desktop" 
-                  @reciter-changed="onReciterChanged"
-                  button-class="" 
+                  button-class=""
+                  @reciter-changed="onReciterChanged" 
                 />
                 <button class="text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100">
                   <span class="text-sm text-slate-500 dark:text-slate-400">ทั้งหมด {{ surahs.length }} รายการ</span>
@@ -315,7 +323,8 @@
 
               <!-- Table Body -->
               <div class="max-h-96 overflow-y-auto">
-                <div v-for="(surah, index) in surahs" :key="surah.id"
+                <div
+v-for="(surah, index) in surahs" :key="surah.id"
                   class="px-6 py-4 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors cursor-pointer border-b border-slate-100 dark:border-slate-700 last:border-b-0"
                   @click="selectAndPlaySurah(surah.id)">
                   <div class="grid grid-cols-12 gap-4 items-center">
@@ -324,7 +333,8 @@
                       <div class="flex items-center">
                         <span v-if="currentSurah !== surah.id" class="text-slate-400 text-sm">{{ String(index +
                           1).padStart(2, '0') }}</span>
-                        <UIcon v-else name="i-heroicons-speaker-wave"
+                        <UIcon
+v-else name="i-heroicons-speaker-wave"
                           class="w-4 h-4 text-slate-800 dark:text-slate-100" />
                       </div>
                     </div>
@@ -335,7 +345,8 @@
                     </div>
 
                     <div class="col-span-1">
-                      <span class="inline-flex px-2 py-0.5 text-xs rounded-full" :class="surah.revelationType === 'Meccan'
+                      <span
+class="inline-flex px-2 py-0.5 text-xs rounded-full" :class="surah.revelationType === 'Meccan'
                         ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/50 dark:text-amber-300'
                         : 'bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300'">
                         {{ surah.revelationType === 'Meccan' ? 'มักกิยะห์' : 'มะดะนียะห์' }}
@@ -386,13 +397,15 @@
             <button
               class="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center hover:bg-white/30 transition-colors"
               @click="togglePlay">
-              <UIcon :name="isPlaying ? 'i-heroicons-pause' : 'i-heroicons-play'" class="w-4 h-4"
+              <UIcon
+:name="isPlaying ? 'i-heroicons-pause' : 'i-heroicons-play'" class="w-4 h-4"
                 :class="{ 'ml-0.5': !isPlaying }" />
             </button>
 
             <!-- Progress Bar -->
             <div class="w-32 h-1 bg-white/20 rounded-full relative cursor-pointer" @click="seekToClick">
-              <div class="h-full bg-white rounded-full transition-all duration-100"
+              <div
+class="h-full bg-white rounded-full transition-all duration-100"
                 :style="{ width: progress + '%' }" />
             </div>
           </div>
@@ -424,7 +437,7 @@ const {
   setSelectedReciter
 } = useReciters();
 
-// Audio player - Enhanced with Howler.js for reliable streaming
+// Audio player - Native HTML5 audio for reliable streaming
 const {
   isPlaying,
   isLoading,
@@ -444,13 +457,12 @@ const {
   formatTime,
   updateMediaMetadata,
   setAutoPlayMetadataCallback,
-  // New Howler-specific state
+  error,
+  // Enhanced streaming state
   isBuffering,
   loadProgress,
-  networkError,
-  retryCount,
-  manualRetry,
-} = useHowlerAudioPlayer();
+  networkType
+} = useAudioPlayer();
 
 // Selection state  
 const selectedSurahValue = ref<number | undefined>(undefined);
@@ -529,12 +541,6 @@ const selectAndPlaySurah = async (surahId: number) => {
 
 // Play from hero button - toggle play/pause or start new audio
 const playFromHero = async () => {
-  // If network error and retries exhausted, trigger manual retry
-  if (networkError.value && retryCount.value >= 3) {
-    await manualRetry();
-    return;
-  }
-
   // If audio is currently playing, just toggle pause
   if (isPlaying.value) {
     await togglePlay();

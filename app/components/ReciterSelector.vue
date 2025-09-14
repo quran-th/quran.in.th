@@ -60,8 +60,8 @@
           <UButton
             color="primary"
             size="lg"
-            @click="confirmSelection"
             class="px-8"
+            @click="confirmSelection"
           >
             ตกลง
           </UButton>
