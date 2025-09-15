@@ -4,45 +4,49 @@ export const useSurahs = () => {
   const surahsData = ref<Surah[]>([])
   const isLoading = ref(true)
   const error = ref<string | null>(null)
+  const currentReciterId = ref<number | null>(null)
 
-  const loadSurahs = async () => {
+  const loadSurahs = async (reciterId: number) => {
     try {
       isLoading.value = true
       error.value = null
-      
-      // Load audio metadata as primary source
-      const audioMetadataModule = await import('~/data/audioMetadata.json')
-      const audioMetadata = audioMetadataModule.default || audioMetadataModule
-      
-      // Convert metadata object to array of surahs
-      surahsData.value = Object.entries(audioMetadata)
-        .map(([id, data]: [string, Record<string, unknown>]) => {
-          const surahId = parseInt(id)
-          
-          return {
-            id: surahId,
-            name: data.name_th || `Surah ${surahId}`,
-            thaiName: data.name_th || `Surah ${surahId}`,
-            arabicName: data.name_th || `Surah ${surahId}`, // Thai transliteration serves as both
-            englishName: data.name_en || getEnglishSurahName(surahId),
-            revelationType: getSurahRevelationType(surahId),
-            versesCount: data.verses_count || getSurahVersesCount(surahId),
-            order: surahId,
-            // Audio metadata
-            duration: data.duration,
-            fileSize: data.file_size,
-            bitRate: data.bit_rate,
-            format: data.format,
-            codec: data.codec,
-            originalFilename: data.original_filename,
-            newFilename: data.new_filename
-          }
-        })
-        .sort((a, b) => a.id - b.id) // Sort by surah ID
-        
+
+      // Load surahs for specific reciter from API
+      const response = await $fetch<{
+        reciterId: string,
+        surahs: any[],
+        total: number
+      }>(`/api/surahs/${reciterId}`)
+
+      // Convert API response to Surah format
+      surahsData.value = response.surahs.map((data: any) => ({
+        id: data.id,
+        name: data.name || data.thaiName || `Surah ${data.id}`,
+        thaiName: data.thaiName || data.name || `Surah ${data.id}`,
+        arabicName: data.thaiName || data.name || `Surah ${data.id}`,
+        englishName: data.englishName || getEnglishSurahName(data.id),
+        revelationType: data.revelationType || getSurahRevelationType(data.id),
+        versesCount: data.versesCount || data.verseCount || getSurahVersesCount(data.id),
+        order: data.id,
+        // Audio metadata
+        duration: data.duration,
+        fileSize: data.fileSize,
+        bitRate: data.bitRate || data.bitrate,
+        format: data.format,
+        codec: data.codec,
+        originalFilename: data.originalFilename,
+        newFilename: data.newFilename || data.filename,
+        slug: data.slug
+      })).sort((a, b) => a.id - b.id) // Sort by surah ID
+
+      currentReciterId.value = reciterId
+      console.log(`📚 Loaded ${surahsData.value.length} surahs for reciter ${reciterId}`)
+
     } catch (err) {
       error.value = 'Failed to load surahs data'
       console.error('Error loading surahs:', err)
+      // Set empty array on error to prevent UI issues
+      surahsData.value = []
     } finally {
       isLoading.value = false
     }
@@ -127,15 +131,14 @@ export const useSurahs = () => {
     return verseCounts[id] || 0
   }
 
-  // Load data on composable initialization
-  if (import.meta.client) {
-    loadSurahs()
-  }
+  // Initialize with empty state - data will be loaded when reciter is selected
+  // No automatic loading on initialization since reciterId is now required
 
   return {
     surahs: readonly(surahsData),
     isLoading: readonly(isLoading),
     error: readonly(error),
+    currentReciterId: readonly(currentReciterId),
     loadSurahs,
     getSurahById,
     formatDuration,

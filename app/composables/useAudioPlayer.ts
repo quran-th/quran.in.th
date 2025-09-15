@@ -158,12 +158,18 @@ export const useAudioPlayer = () => {
     return `/api/audio/${paddedReciterId}/${surahId}`
   }
 
-  // Load audio metadata from local JSON data
-  const loadAudioMetadata = async (surahId: number): Promise<Record<string, unknown> | null> => {
+  // Load audio metadata from reciter-specific surah data via API
+  const loadAudioMetadata = async (surahId: number, reciterId: number): Promise<Record<string, unknown> | null> => {
     try {
-      // Import the metadata JSON (this will be bundled with the app)
-      const { default: audioMetadata } = await import('~/data/audioMetadata.json')
-      return audioMetadata[surahId] || null
+      // Get metadata from the surahs API endpoint
+      const response = await $fetch<{
+        reciterId: string,
+        surahs: any[],
+        total: number
+      }>(`/api/surahs/${reciterId}`)
+
+      const surahData = response.surahs.find(s => s.id === surahId)
+      return surahData || null
     } catch (error) {
       console.warn('[HowlerPlayer] Could not load audio metadata:', error)
       return null
@@ -186,13 +192,13 @@ export const useAudioPlayer = () => {
       state.currentReciter = reciterId
 
       // Load metadata for the surah
-      const metadata = await loadAudioMetadata(surahId)
+      const metadata = await loadAudioMetadata(surahId, reciterId)
       if (metadata) {
         // Create a minimal AudioFile object for compatibility
         state.audioFile = {
           id: surahId,
           chapter_id: surahId,
-          file_size: metadata.file_size || 0,
+          file_size: metadata.fileSize || 0,
           format: metadata.format || 'ogg',
           audio_url: '',  // Will be set below
           duration: metadata.duration || 0,
