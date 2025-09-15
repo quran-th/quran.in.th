@@ -1,17 +1,23 @@
 import { Howl } from 'howler'
 import type { AudioPlayerState, VerseTiming } from '~/types/quran'
+import { useLocalStorage } from './useLocalStorage'
 
 export const useAudioPlayer = () => {
+  const localStorage = useLocalStorage()
+
+  // Load initial state from localStorage or set defaults
+  const initialState = localStorage.loadPlayerState()
+
   // Reactive state - keeping essential state from original
   const state = reactive<AudioPlayerState>({
     isPlaying: false,
     isLoading: false,
     currentTime: 0,
     duration: 0,
-    volume: 80,
+    volume: initialState.volume,
     isMuted: false,
-    currentSurah: null,
-    currentReciter: null,
+    currentSurah: initialState.currentSurah,
+    currentReciter: initialState.currentReciter,
     currentVerse: 1,
     audioElement: null, // Will be replaced by Howl instance
     audioFile: null,
@@ -19,15 +25,18 @@ export const useAudioPlayer = () => {
   })
 
   // Additional reactive state
-  const showTranslation = ref(true)
+  const showTranslation = ref(initialState.showTranslation)
   const repeatMode = ref<'none' | 'one' | 'all'>('none')
-  const playbackRate = ref(1.0)
+  const playbackRate = ref(initialState.playbackRate)
   const autoPlay = ref(true)
 
-  // Player configuration state
-  const shufflePlay = ref(false)
-  const loopPlay = ref(false)
-  const autoPlayNext = ref(true)
+  // Player configuration state - single mode from localStorage
+  const playerMode = ref(initialState.playerMode)
+
+  // Computed properties for backward compatibility
+  const shufflePlay = computed(() => playerMode.value === 'shuffle')
+  const loopPlay = computed(() => playerMode.value === 'loop')
+  const autoPlayNext = computed(() => playerMode.value === 'autoNext')
   
   // Howler.js specific state
   const currentHowl = ref<Howl | null>(null)
@@ -195,6 +204,10 @@ export const useAudioPlayer = () => {
       state.error = null
       state.currentSurah = surahId
       state.currentReciter = reciterId
+
+      // Save to localStorage when surah or reciter changes
+      localStorage.updateSurah(surahId)
+      localStorage.updateReciter(reciterId)
 
       // Load metadata for the surah
       const metadata = await loadAudioMetadata(surahId, reciterId)
@@ -382,6 +395,8 @@ export const useAudioPlayer = () => {
     if (currentHowl.value) {
       currentHowl.value.volume(state.volume / 100)
     }
+    // Save to localStorage
+    localStorage.updateVolume(state.volume)
   }
 
   const toggleMute = () => {
@@ -397,6 +412,8 @@ export const useAudioPlayer = () => {
     if (currentHowl.value) {
       currentHowl.value.rate(playbackRate.value)
     }
+    // Save to localStorage
+    localStorage.updatePlaybackRate(playbackRate.value)
   }
 
   // Verse navigation (preserved from original)
@@ -503,6 +520,29 @@ export const useAudioPlayer = () => {
     return `${mins}:${secs.toString().padStart(2, '0')}`
   }
 
+  // Functions to set player mode (ensuring only one is active)
+  const setPlayerMode = (mode: 'autoNext' | 'shuffle' | 'loop' | 'none') => {
+    playerMode.value = mode
+    localStorage.updatePlayerMode(mode)
+  }
+
+  const toggleShufflePlay = () => {
+    setPlayerMode(shufflePlay.value ? 'none' : 'shuffle')
+  }
+
+  const toggleLoopPlay = () => {
+    setPlayerMode(loopPlay.value ? 'none' : 'loop')
+  }
+
+  const toggleAutoPlayNext = () => {
+    setPlayerMode(autoPlayNext.value ? 'none' : 'autoNext')
+  }
+
+  // Watch reactive state changes to save to localStorage
+  watch(showTranslation, (newValue) => {
+    localStorage.updateShowTranslation(newValue)
+  })
+
   // Cleanup
   const cleanup = () => {
     if (currentHowl.value) {
@@ -532,9 +572,14 @@ export const useAudioPlayer = () => {
     autoPlay,
 
     // Player configuration state
+    playerMode,
     shufflePlay,
     loopPlay,
     autoPlayNext,
+    setPlayerMode,
+    toggleShufflePlay,
+    toggleLoopPlay,
+    toggleAutoPlayNext,
 
     // Howler.js specific state
     isBuffering,
@@ -567,6 +612,10 @@ export const useAudioPlayer = () => {
     updateMediaMetadata: updateMediaSessionMetadata, // Alias for backward compatibility
     playNextSurah,
     playRandomSurah,
-    setAutoPlayMetadataCallback
+    setAutoPlayMetadataCallback,
+
+    // localStorage utilities
+    clearPlayerState: localStorage.clearPlayerState,
+    getRandomSurah: localStorage.getRandomSurah
   }
 }

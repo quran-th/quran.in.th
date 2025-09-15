@@ -259,7 +259,7 @@
               <!-- Shuffle Play Option -->
               <div class="flex items-center justify-between p-4 rounded-xl border border-gray-200 dark:border-gray-700 cursor-pointer transition-all hover:bg-gray-50 dark:hover:bg-slate-700"
                 :class="{ 'bg-indigo-50 dark:bg-indigo-900/20 border-indigo-200 dark:border-indigo-800': shufflePlay }"
-                @click="shufflePlay ? setPlayerMode('autoplay') : setPlayerMode('shuffle')">
+                @click="toggleShufflePlay">
                 <div class="flex items-center space-x-4">
                   <div class="w-12 h-12 rounded-full flex items-center justify-center"
                     :class="shufflePlay
@@ -288,7 +288,7 @@
               <!-- Loop Play Option -->
               <div class="flex items-center justify-between p-4 rounded-xl border border-gray-200 dark:border-gray-700 cursor-pointer transition-all hover:bg-gray-50 dark:hover:bg-slate-700"
                 :class="{ 'bg-indigo-50 dark:bg-indigo-900/20 border-indigo-200 dark:border-indigo-800': loopPlay }"
-                @click="loopPlay ? setPlayerMode('autoplay') : setPlayerMode('loop')">
+                @click="toggleLoopPlay">
                 <div class="flex items-center space-x-4">
                   <div class="w-12 h-12 rounded-full flex items-center justify-center"
                     :class="loopPlay
@@ -317,7 +317,7 @@
               <!-- Auto Play Next Option -->
               <div class="flex items-center justify-between p-4 rounded-xl border border-gray-200 dark:border-gray-700 cursor-pointer transition-all hover:bg-gray-50 dark:hover:bg-slate-700"
                 :class="{ 'bg-indigo-50 dark:bg-indigo-900/20 border-indigo-200 dark:border-indigo-800': autoPlayNext }"
-                @click="setPlayerMode('autoplay')">
+                @click="toggleAutoPlayNext">
                 <div class="flex items-center space-x-4">
                   <div class="w-12 h-12 rounded-full flex items-center justify-center"
                     :class="autoPlayNext
@@ -581,9 +581,13 @@ const {
   isBuffering,
   networkType,
   // Player configuration
+  playerMode,
   shufflePlay,
   loopPlay,
-  autoPlayNext
+  autoPlayNext,
+  toggleShufflePlay,
+  toggleLoopPlay,
+  toggleAutoPlayNext
 } = useAudioPlayer();
 
 // Selection state  
@@ -799,27 +803,7 @@ const playSelectedAudio = async () => {
 
 // Removed unused placeholder functions
 
-// Player configuration modal functions - mutually exclusive options
-const setPlayerMode = (mode: 'shuffle' | 'loop' | 'autoplay') => {
-  // Set the selected mode (default is autoplay)
-  switch(mode) {
-    case 'shuffle':
-      shufflePlay.value = true;
-      loopPlay.value = false;
-      autoPlayNext.value = false;
-      break;
-    case 'loop':
-      shufflePlay.value = false;
-      loopPlay.value = true;
-      autoPlayNext.value = false;
-      break;
-    case 'autoplay':
-      shufflePlay.value = false;
-      loopPlay.value = false;
-      autoPlayNext.value = true;
-      break;
-  }
-};
+// Player configuration modal functions are now handled by the composable
 
 // Select reciter from tab (mobile)
 const selectReciter = async (reciterId: string) => {
