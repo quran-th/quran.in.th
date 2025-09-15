@@ -107,8 +107,10 @@
 
               <button
                 class="w-10 h-10 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center text-white transition-all hover:bg-white/30 active:scale-95"
-                @click="showSurahList = true">
-                <UIcon name="i-heroicons-list-bullet" class="w-5 h-5" />
+                @click="showPlayerConfig = true">
+                <UIcon v-if="shufflePlay" name="i-lucide-shuffle" class="w-5 h-5" />
+                <UIcon v-else-if="loopPlay" name="i-heroicons-arrow-path-rounded-square" class="w-5 h-5" />
+                <UIcon v-else name="i-lucide-infinity" class="w-5 h-5" />
               </button>
             </div>
           </div>
@@ -236,63 +238,107 @@
 
       </main>
 
-      <!-- Surah Selection Modal -->
-      <div v-if="showSurahList" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-end"
-        @click="showSurahList = false">
+      <!-- Player Configuration Modal -->
+      <div v-if="showPlayerConfig" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-end"
+        @click="showPlayerConfig = false">
         <div class="w-full bg-white dark:bg-slate-800 rounded-t-3xl max-h-[80vh] flex flex-col" :class="{
-          'animate-slide-up': showSurahList,
+          'animate-slide-up': showPlayerConfig,
         }" @click.stop>
           <!-- Modal Header -->
           <div class="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
-            <h3 class="text-xl font-semibold text-slate-800 dark:text-slate-100">เลือกซูเราะห์</h3>
+            <h3 class="text-xl font-semibold text-slate-800 dark:text-slate-100">ตั้งค่าเครื่องเล่น</h3>
             <button class="w-8 h-8 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center"
-              @click="showSurahList = false">
+              @click="showPlayerConfig = false">
               <UIcon name="i-heroicons-x-mark" class="w-5 h-5 text-slate-600 dark:text-slate-400" />
             </button>
           </div>
 
-          <!-- Surah List -->
-          <div class="flex-1 overflow-hidden">
-            <!-- Table Header -->
-            <div class="px-6 py-3 bg-gray-50 dark:bg-slate-700 border-b border-gray-200 dark:border-gray-600">
-              <div class="grid grid-cols-12 gap-4 text-sm font-medium text-slate-500 dark:text-slate-400">
-                <div class="col-span-2">#</div>
-                <div class="col-span-10">ซูเราะห์</div>
-              </div>
-            </div>
-
-            <!-- Scrollable List -->
-            <div class="overflow-y-auto max-h-96">
-              <div v-for="surah in surahs" :key="surah.id"
-                class="px-6 py-4 border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors cursor-pointer"
-                :class="{
-                  'bg-indigo-50 dark:bg-indigo-900/20': currentSurah === surah.id,
-                  'text-indigo-600 dark:text-indigo-400': currentSurah === surah.id
-                }" @click="selectSurahFromModal(surah.id)">
-                <div class="grid grid-cols-12 gap-4 items-center">
-                  <!-- Number -->
-                  <div class="col-span-2">
-                    <div class="flex items-center">
-                      <span v-if="currentSurah !== surah.id" class="text-slate-600 dark:text-slate-400 font-medium">{{
-                        surah.id }}</span>
-                      <UIcon v-else name="i-heroicons-speaker-wave" class="w-5 h-5 text-slate-800" />
-                    </div>
+          <!-- Configuration Options -->
+          <div class="flex-1 p-6">
+            <div class="space-y-4">
+              <!-- Shuffle Play Option -->
+              <div class="flex items-center justify-between p-4 rounded-xl border border-gray-200 dark:border-gray-700 cursor-pointer transition-all hover:bg-gray-50 dark:hover:bg-slate-700"
+                :class="{ 'bg-indigo-50 dark:bg-indigo-900/20 border-indigo-200 dark:border-indigo-800': shufflePlay }"
+                @click="shufflePlay ? setPlayerMode('autoplay') : setPlayerMode('shuffle')">
+                <div class="flex items-center space-x-4">
+                  <div class="w-12 h-12 rounded-full flex items-center justify-center"
+                    :class="shufflePlay
+                      ? 'bg-indigo-100 dark:bg-indigo-900/50'
+                      : 'bg-gray-100 dark:bg-gray-700'">
+                    <UIcon name="i-lucide-shuffle" class="w-6 h-6"
+                      :class="shufflePlay
+                        ? 'text-indigo-600 dark:text-indigo-400'
+                        : 'text-gray-600 dark:text-gray-400'" />
                   </div>
+                  <div>
+                    <h4 class="font-medium text-slate-900 dark:text-slate-100">เล่นแบบสุ่ม</h4>
+                    <p class="text-sm text-slate-500 dark:text-slate-400">เล่นซูเราะฮฺแบบสุ่มลำดับ</p>
+                  </div>
+                </div>
+                <div class="flex items-center">
+                  <div class="w-6 h-6 rounded-full border-2 flex items-center justify-center"
+                    :class="shufflePlay
+                      ? 'bg-indigo-600 border-indigo-600'
+                      : 'border-gray-300 dark:border-gray-600'">
+                    <UIcon v-if="shufflePlay" name="i-heroicons-check" class="w-4 h-4 text-white" />
+                  </div>
+                </div>
+              </div>
 
-                  <!-- Surah Name -->
-                  <div class="col-span-10">
-                    <div class="text-base font-medium text-slate-900 dark:text-slate-100 mb-1">
-                      {{ surah.thaiName }}
-                    </div>
-                    <div class="text-sm text-slate-500 dark:text-slate-400">
-                      {{ surah.englishName }} • {{ surah.versesCount }} อายะห์ •
-                      <span v-if="surah.duration">{{ formatDuration(surah.duration) }} • </span>
-                      <span class="inline-flex px-2 py-0.5 text-xs rounded-full" :class="surah.revelationType === 'Meccan'
-                        ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/50 dark:text-amber-300'
-                        : 'bg-green-100 text-green-700 dark:bg-green-900/50 dark:text-green-300'">
-                        {{ surah.revelationType === 'Meccan' ? 'มักกะห์' : 'มะดีนะห์' }}
-                      </span>
-                    </div>
+              <!-- Loop Play Option -->
+              <div class="flex items-center justify-between p-4 rounded-xl border border-gray-200 dark:border-gray-700 cursor-pointer transition-all hover:bg-gray-50 dark:hover:bg-slate-700"
+                :class="{ 'bg-indigo-50 dark:bg-indigo-900/20 border-indigo-200 dark:border-indigo-800': loopPlay }"
+                @click="loopPlay ? setPlayerMode('autoplay') : setPlayerMode('loop')">
+                <div class="flex items-center space-x-4">
+                  <div class="w-12 h-12 rounded-full flex items-center justify-center"
+                    :class="loopPlay
+                      ? 'bg-indigo-100 dark:bg-indigo-900/50'
+                      : 'bg-gray-100 dark:bg-gray-700'">
+                    <UIcon name="i-heroicons-arrow-path-rounded-square" class="w-6 h-6"
+                      :class="loopPlay
+                        ? 'text-indigo-600 dark:text-indigo-400'
+                        : 'text-gray-600 dark:text-gray-400'" />
+                  </div>
+                  <div>
+                    <h4 class="font-medium text-slate-900 dark:text-slate-100">เล่นซ้ำ</h4>
+                    <p class="text-sm text-slate-500 dark:text-slate-400">เล่นซูเราะฮฺปัจจุบันซ้ำ</p>
+                  </div>
+                </div>
+                <div class="flex items-center">
+                  <div class="w-6 h-6 rounded-full border-2 flex items-center justify-center"
+                    :class="loopPlay
+                      ? 'bg-indigo-600 border-indigo-600'
+                      : 'border-gray-300 dark:border-gray-600'">
+                    <UIcon v-if="loopPlay" name="i-heroicons-check" class="w-4 h-4 text-white" />
+                  </div>
+                </div>
+              </div>
+
+              <!-- Auto Play Next Option -->
+              <div class="flex items-center justify-between p-4 rounded-xl border border-gray-200 dark:border-gray-700 cursor-pointer transition-all hover:bg-gray-50 dark:hover:bg-slate-700"
+                :class="{ 'bg-indigo-50 dark:bg-indigo-900/20 border-indigo-200 dark:border-indigo-800': autoPlayNext }"
+                @click="setPlayerMode('autoplay')">
+                <div class="flex items-center space-x-4">
+                  <div class="w-12 h-12 rounded-full flex items-center justify-center"
+                    :class="autoPlayNext
+                      ? 'bg-indigo-100 dark:bg-indigo-900/50'
+                      : 'bg-gray-100 dark:bg-gray-700'">
+                    <UIcon name="i-lucide-infinity" class="w-6 h-6"
+                      :class="autoPlayNext
+                        ? 'text-indigo-600 dark:text-indigo-400'
+                        : 'text-gray-600 dark:text-gray-400'" />
+                  </div>
+                  <div>
+                    <h4 class="font-medium text-slate-900 dark:text-slate-100">เล่นต่อเนื่อง</h4>
+                    <p class="text-sm text-slate-500 dark:text-slate-400">เล่นซูเราะฮฺถัดไปโดยอัตโนมัติ</p>
+                  </div>
+                </div>
+                <div class="flex items-center">
+                  <div class="w-6 h-6 rounded-full border-2 flex items-center justify-center"
+                    :class="autoPlayNext
+                      ? 'bg-indigo-600 border-indigo-600'
+                      : 'border-gray-300 dark:border-gray-600'">
+                    <UIcon v-if="autoPlayNext" name="i-heroicons-check" class="w-4 h-4 text-white" />
                   </div>
                 </div>
               </div>
@@ -533,7 +579,11 @@ const {
   error,
   // Enhanced streaming state
   isBuffering,
-  networkType
+  networkType,
+  // Player configuration
+  shufflePlay,
+  loopPlay,
+  autoPlayNext
 } = useAudioPlayer();
 
 // Selection state  
@@ -541,7 +591,7 @@ const selectedSurahValue = ref<number | undefined>(undefined);
 const currentReciterId = ref<number>(1); // Default to first reciter
 
 // Modal state
-const showSurahList = ref(false);
+const showPlayerConfig = ref(false);
 
 // Tab state
 const activeTab = ref('playing');
@@ -749,10 +799,26 @@ const playSelectedAudio = async () => {
 
 // Removed unused placeholder functions
 
-// Modal surah selection
-const selectSurahFromModal = (surahId: number) => {
-  selectedSurahValue.value = surahId;
-  showSurahList.value = false;
+// Player configuration modal functions - mutually exclusive options
+const setPlayerMode = (mode: 'shuffle' | 'loop' | 'autoplay') => {
+  // Set the selected mode (default is autoplay)
+  switch(mode) {
+    case 'shuffle':
+      shufflePlay.value = true;
+      loopPlay.value = false;
+      autoPlayNext.value = false;
+      break;
+    case 'loop':
+      shufflePlay.value = false;
+      loopPlay.value = true;
+      autoPlayNext.value = false;
+      break;
+    case 'autoplay':
+      shufflePlay.value = false;
+      loopPlay.value = false;
+      autoPlayNext.value = true;
+      break;
+  }
 };
 
 // Select reciter from tab (mobile)

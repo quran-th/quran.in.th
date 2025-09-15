@@ -23,6 +23,11 @@ export const useAudioPlayer = () => {
   const repeatMode = ref<'none' | 'one' | 'all'>('none')
   const playbackRate = ref(1.0)
   const autoPlay = ref(true)
+
+  // Player configuration state
+  const shufflePlay = ref(false)
+  const loopPlay = ref(false)
+  const autoPlayNext = ref(true)
   
   // Howler.js specific state
   const currentHowl = ref<Howl | null>(null)
@@ -422,40 +427,60 @@ export const useAudioPlayer = () => {
     seekTo(newTime)
   }
 
-  // Handle audio end with repeat modes
+  // Handle audio end with new player modes
   const handleAudioEnd = () => {
-    if (repeatMode.value === 'one') {
+    if (loopPlay.value) {
+      // Loop current surah
       seekTo(0)
       play()
-    } else if (repeatMode.value === 'all' || autoPlay.value) {
+    } else if (shufflePlay.value) {
+      // Play random surah
+      playRandomSurah()
+    } else if (autoPlayNext.value) {
+      // Play next sequential surah
       playNextSurah()
+    }
+    // If none of the modes are active, just stop playing
+  }
+
+  // Play random surah for shuffle mode
+  const playRandomSurah = async () => {
+    if (!state.currentReciter) return
+
+    // Generate random surah ID (1-114), excluding current surah
+    let randomSurahId
+    do {
+      randomSurahId = Math.floor(Math.random() * 114) + 1
+    } while (randomSurahId === state.currentSurah)
+
+    try {
+      await loadAudio(randomSurahId, state.currentReciter)
+      await play()
+      // Call metadata callback if set
+      if (onAutoPlayMetadataUpdate) {
+        onAutoPlayMetadataUpdate(randomSurahId, state.currentReciter)
+      }
+    } catch (error) {
+      console.error('[HowlerPlayer] Error loading random surah:', error)
+      state.error = 'Failed to load random surah'
     }
   }
 
   // Play next sequential surah
   const playNextSurah = async () => {
     if (!state.currentSurah || !state.currentReciter) return
-    
+
     const nextSurahId = state.currentSurah + 1
-    
-    if (nextSurahId > 114) {
-      if (repeatMode.value === 'all') {
-        await loadAudio(1, state.currentReciter)
-        await play()
-        // Call metadata callback if set
-        if (onAutoPlayMetadataUpdate) {
-          onAutoPlayMetadataUpdate(1, state.currentReciter)
-        }
-      }
-      return
-    }
-    
+
+    // If we've reached the end (Surah 114), restart from Surah 1
+    const targetSurahId = nextSurahId > 114 ? 1 : nextSurahId
+
     try {
-      await loadAudio(nextSurahId, state.currentReciter)
+      await loadAudio(targetSurahId, state.currentReciter)
       await play()
       // Call metadata callback if set
       if (onAutoPlayMetadataUpdate) {
-        onAutoPlayMetadataUpdate(nextSurahId, state.currentReciter)
+        onAutoPlayMetadataUpdate(targetSurahId, state.currentReciter)
       }
     } catch (error) {
       console.error('[HowlerPlayer] Error loading next surah:', error)
@@ -505,11 +530,16 @@ export const useAudioPlayer = () => {
     repeatMode,
     playbackRate,
     autoPlay,
-    
+
+    // Player configuration state
+    shufflePlay,
+    loopPlay,
+    autoPlayNext,
+
     // Howler.js specific state
     isBuffering,
     networkType,
-    
+
     // Computed
     progress,
     currentVerseTiming,
@@ -517,7 +547,7 @@ export const useAudioPlayer = () => {
     totalVerses,
     isFirstVerse,
     isLastVerse,
-    
+
     // Methods
     loadAudio,
     play,
@@ -536,6 +566,7 @@ export const useAudioPlayer = () => {
     updateMediaSessionMetadata,
     updateMediaMetadata: updateMediaSessionMetadata, // Alias for backward compatibility
     playNextSurah,
+    playRandomSurah,
     setAutoPlayMetadataCallback
   }
 }
