@@ -43,6 +43,9 @@ export const useAudioPlayer = () => {
   const soundId = ref<number | null>(null)
   const isBuffering = ref(false)
 
+  // Track last saved time to prevent excessive localStorage updates
+  let lastSavedTime = 0
+
   // Network type detection (preserved from original)
   const networkType = ref<'cellular' | 'wifi' | 'unknown'>('unknown')
   
@@ -315,7 +318,10 @@ export const useAudioPlayer = () => {
 
       // Store the Howl instance
       currentHowl.value = howl
-      
+
+      // Reset saved time tracker for new audio
+      lastSavedTime = 0
+
       // Set up time tracking interval (Howler.js doesn't provide timeupdate)
       if (import.meta.client) {
         const updateTime = () => {
@@ -330,7 +336,9 @@ export const useAudioPlayer = () => {
               }
 
               // Save current state (surah + time) to localStorage every 5 seconds
-              if (Math.floor(seek) % 5 === 0 && state.currentSurah) {
+              const currentFiveSecondMark = Math.floor(seek / 5) * 5
+              if (currentFiveSecondMark !== lastSavedTime && currentFiveSecondMark % 5 === 0 && state.currentSurah) {
+                lastSavedTime = currentFiveSecondMark
                 localStorage.updateCurrentState(state.currentSurah, seek)
               }
             }
