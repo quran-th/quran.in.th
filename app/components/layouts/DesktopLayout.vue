@@ -157,173 +157,61 @@
         </div>
 
         <!-- Large Player Mode -->
-        <div v-else class="flex items-center justify-center min-h-[calc(100vh-200px)] animate-fade-in">
-          <div class="w-full max-w-2xl mx-auto">
-            <!-- Large Album Art Section -->
-            <div class="text-center mb-8">
-              <div class="relative w-60 h-60 mx-auto mb-6">
-                <!-- Album Art Container -->
-                <div class="w-full h-full rounded-3xl overflow-hidden shadow-2xl bg-gradient-to-br from-amber-400 via-orange-500 to-red-600 dark:from-indigo-400 dark:via-purple-500 dark:to-pink-600">
-                  <div class="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-80" style="background-image: url('/bg.webp')" />
-                  <div class="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
-                  <div class="relative z-10 flex items-center justify-center h-full">
-                    <div class="text-center text-white">
-                      <div class="w-20 h-20 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-4">
-                        <span class="text-3xl font-bold">{{ currentSurah || '1' }}</span>
-                      </div>
-                      <div class="px-3 py-1 bg-white/20 rounded-full">
-                        <span class="text-sm">{{ getCurrentSurahRevelationPlace() }}</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <!-- Track Info -->
-              <div class="mb-8">
-                <h2 class="text-3xl font-bold text-slate-900 dark:text-slate-100 mb-2">
-                  {{ getCurrentSurahName().split('.')[1]?.trim() || 'อัล-ฟาติหะฮฺ' }}
-                </h2>
-                <div class="flex items-center justify-center gap-2">
-                  <span class="text-lg text-slate-600 dark:text-slate-400">เสียงแปลโดย</span>
-                  <!-- Reciter Selector in Player Mode -->
-                  <div class="relative">
-                    <select
-                      class="px-3 py-2 border border-[rgb(191,179,147)]/30 dark:border-[rgb(171,159,127)]/30 rounded-full bg-gradient-to-r from-[rgb(191,179,147)]/10 to-[rgb(171,159,127)]/10 dark:from-[rgb(35,32,48)] dark:to-[rgb(25,22,38)] text-slate-900 dark:text-[rgb(191,179,147)] text-sm appearance-none pr-8 shadow-sm hover:shadow-md transition-all"
-                      :value="currentReciterId" @change="onDesktopReciterChange">
-                      <option value="1">บรรจง โซะมณี</option>
-                      <option value="2">อุมัร สุจิตวรรณศรี</option>
-                    </select>
-                    <UIcon name="i-heroicons-chevron-down" class="absolute right-2 top-1/2 transform -translate-y-1/2 w-4 h-4 text-[rgb(191,179,147)] dark:text-[rgb(171,159,127)] pointer-events-none" />
-                  </div>
-                </div>
-              </div>
-
-              <!-- Progress Bar -->
-              <div class="mb-8">
-                <div class="flex items-center justify-between mb-3">
-                  <span class="text-sm text-slate-500 dark:text-slate-400">{{ formatTimeWithHours(currentTime) || '0:00' }}</span>
-                  <span class="text-sm text-slate-500 dark:text-slate-400">{{ getCurrentSurahTotalDuration() || formatTimeWithHours(duration) || '0:00' }}</span>
-                </div>
-                <div class="w-full h-2 bg-slate-200 dark:bg-slate-700 rounded-full cursor-pointer" @click="seekToClick">
-                  <div class="h-full bg-gradient-to-r from-[rgb(191,179,147)] to-[rgb(171,159,127)] dark:from-[rgb(191,179,147)] dark:to-[rgb(171,159,127)] rounded-full transition-all duration-300"
-                    :style="{ width: correctProgress + '%' }" />
-                </div>
-              </div>
-
-              <!-- Large Player Controls -->
-              <div class="flex items-center justify-center gap-6 mb-8">
-                <!-- Previous -->
-                <button
-                  class="w-14 h-14 rounded-full bg-gradient-to-br from-[rgb(191,179,147)] to-[rgb(171,159,127)] dark:from-[rgb(191,179,147)] dark:to-[rgb(171,159,127)] hover:from-[rgb(201,189,157)] hover:to-[rgb(181,169,137)] dark:hover:from-[rgb(201,189,157)] dark:hover:to-[rgb(181,169,137)] flex items-center justify-center transition-all active:scale-95 shadow-md hover:shadow-lg"
-                  :disabled="isFirstVerse" :class="{ 'opacity-50': isFirstVerse }" @click="previousVerse">
-                  <UIcon name="i-heroicons-backward" class="w-6 h-6 text-white" />
-                </button>
-
-                <!-- Play/Pause -->
-                <button
-                  class="w-20 h-20 rounded-full bg-gradient-to-br from-[rgb(191,179,147)] to-[rgb(171,159,127)] dark:from-[rgb(191,179,147)] dark:to-[rgb(171,159,127)] hover:from-[rgb(201,189,157)] hover:to-[rgb(181,169,137)] dark:hover:from-[rgb(201,189,157)] dark:hover:to-[rgb(181,169,137)] flex items-center justify-center text-white transition-all active:scale-95 shadow-xl"
-                  :disabled="!currentSurah || !currentReciter" @click="togglePlay()">
-                  <UIcon v-if="!isLoading && !error" :name="isPlaying ? 'i-heroicons-pause' : 'i-heroicons-play'"
-                    class="w-8 h-8 text-white" :class="{ 'ml-1': !isPlaying }" />
-                  <UIcon v-else-if="error" name="i-heroicons-exclamation-triangle" class="w-8 h-8 text-white" />
-                  <div v-else class="w-8 h-8 animate-spin rounded-full border-3 border-white border-t-transparent" />
-                </button>
-
-                <!-- Next -->
-                <button
-                  class="w-14 h-14 rounded-full bg-gradient-to-br from-[rgb(191,179,147)] to-[rgb(171,159,127)] dark:from-[rgb(191,179,147)] dark:to-[rgb(171,159,127)] hover:from-[rgb(201,189,157)] hover:to-[rgb(181,169,137)] dark:hover:from-[rgb(201,189,157)] dark:hover:to-[rgb(181,169,137)] flex items-center justify-center transition-all active:scale-95 shadow-md hover:shadow-lg"
-                  :disabled="isLastVerse" :class="{ 'opacity-50': isLastVerse }" @click="nextVerse">
-                  <UIcon name="i-heroicons-forward" class="w-6 h-6 text-white" />
-                </button>
-              </div>
-
-              <!-- Player Mode Controls -->
-              <div class="flex items-center justify-center gap-4">
-                <button
-                  class="w-12 h-12 rounded-full flex items-center justify-center transition-all"
-                  :class="shufflePlay
-                    ? 'bg-gradient-to-br from-[rgb(191,179,147)] to-[rgb(171,159,127)] dark:from-[rgb(191,179,147)] dark:to-[rgb(171,159,127)] text-white shadow-lg hover:shadow-xl hover:from-[rgb(201,189,157)] hover:to-[rgb(181,169,137)]'
-                    : 'text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700'"
-                  @click="toggleShufflePlay">
-                  <UIcon name="i-lucide-shuffle" class="w-5 h-5" />
-                </button>
-
-                <button
-                  class="w-12 h-12 rounded-full flex items-center justify-center transition-all"
-                  :class="loopPlay
-                    ? 'bg-gradient-to-br from-[rgb(191,179,147)] to-[rgb(171,159,127)] dark:from-[rgb(191,179,147)] dark:to-[rgb(171,159,127)] text-white shadow-lg hover:shadow-xl hover:from-[rgb(201,189,157)] hover:to-[rgb(181,169,137)]'
-                    : 'text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700'"
-                  @click="toggleLoopPlay">
-                  <UIcon name="i-heroicons-arrow-path-rounded-square" class="w-5 h-5" />
-                </button>
-
-                <button
-                  class="w-12 h-12 rounded-full flex items-center justify-center transition-all"
-                  :class="autoPlayNext
-                    ? 'bg-gradient-to-br from-[rgb(191,179,147)] to-[rgb(171,159,127)] dark:from-[rgb(191,179,147)] dark:to-[rgb(171,159,127)] text-white shadow-lg hover:shadow-xl hover:from-[rgb(201,189,157)] hover:to-[rgb(181,169,137)]'
-                    : 'text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700'"
-                  @click="toggleAutoPlayNext">
-                  <UIcon name="i-lucide-infinity" class="w-5 h-5" />
-                </button>
-              </div>
-
-              <!-- Status Messages -->
-              <div v-if="error" class="mt-6">
-                <p class="text-red-500 text-sm">
-                  เกิดข้อผิดพลาด - กรุณาลองใหม่
-                </p>
-              </div>
-
-              <div v-else-if="isBuffering || isLoading" class="mt-6">
-                <p class="text-blue-500 text-sm">
-                  กำลังโหลดเสียง...
-                  <span v-if="networkType === 'cellular'" class="ml-1">(📱 เซลลูลาร์)</span>
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
+        <DesktopPlayer
+          v-else
+          :is-playing="isPlaying"
+          :is-loading="isLoading"
+          :current-time="currentTime"
+          :duration="duration"
+          :current-surah="currentSurah"
+          :current-reciter="currentReciter"
+          :is-first-verse="isFirstVerse"
+          :is-last-verse="isLastVerse"
+          :error="error"
+          :is-buffering="isBuffering"
+          :network-type="networkType"
+          :shuffle-play="shufflePlay"
+          :loop-play="loopPlay"
+          :auto-play-next="autoPlayNext"
+          :current-reciter-id="currentReciterId"
+          :correct-progress="correctProgress"
+          :previous-verse="previousVerse"
+          :next-verse="nextVerse"
+          :toggle-play="togglePlay"
+          :seek-to-click="seekToClick"
+          :on-desktop-reciter-change="onDesktopReciterChange"
+          :toggle-shuffle-play="toggleShufflePlay"
+          :toggle-loop-play="toggleLoopPlay"
+          :toggle-auto-play-next="toggleAutoPlayNext"
+          :get-current-surah-name="getCurrentSurahName"
+          :get-current-surah-revelation-place="getCurrentSurahRevelationPlace"
+          :get-current-surah-total-duration="getCurrentSurahTotalDuration"
+          :format-time-with-hours="formatTimeWithHours"
+        />
       </div>
     </main>
 
     <!-- Mini Player (Fixed Bottom) - Hide in Player Mode -->
-    <div v-if="!isLargePlayerMode" class="fixed bottom-0 left-0 right-0 bg-slate-900 dark:bg-slate-950 text-white px-6 py-4">
-      <div class="flex items-center gap-4">
-        <!-- Track Info -->
-        <div class="flex items-center gap-3 flex-1">
-          <div
-            class="w-12 h-12 bg-gradient-to-br from-amber-400 to-orange-600 rounded-lg flex items-center justify-center">
-            <span class="text-white font-bold text-sm">{{ currentSurah || '1' }}</span>
-          </div>
-          <div>
-            <p class="font-medium">{{ getCurrentSurahName().split('.')[1]?.trim() || 'อัล-ฟาติหะฮฺ' }}</p>
-            <p class="text-white/60 text-sm">เสียงแปลโดย {{ getCurrentReciterName }}</p>
-          </div>
-        </div>
-
-        <!-- Time and Controls -->
-        <div class="flex items-center gap-4">
-          <span class="text-white/60 text-sm">{{ formatTimeWithHours(currentTime) || '0:00' }}</span>
-          <button
-            class="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center hover:bg-white/30 transition-colors"
-            @click="togglePlay">
-            <UIcon :name="isPlaying ? 'i-heroicons-pause' : 'i-heroicons-play'" class="w-4 h-4"
-              :class="{ 'ml-0.5': !isPlaying }" />
-          </button>
-
-          <!-- Progress Bar -->
-          <div class="w-32 h-1 bg-white/20 rounded-full relative cursor-pointer" @click="seekToClick">
-            <div class="h-full bg-white rounded-full transition-all duration-100"
-              :style="{ width: correctProgress + '%' }" />
-          </div>
-        </div>
-      </div>
-    </div>
+    <MiniPlayer
+      v-if="!isLargePlayerMode"
+      :is-playing="isPlaying"
+      :current-time="currentTime"
+      :current-surah="currentSurah"
+      :get-current-reciter-name="getCurrentReciterName"
+      :correct-progress="correctProgress"
+      :toggle-play="togglePlay"
+      :seek-to-click="seekToClick"
+      :get-current-surah-name="getCurrentSurahName"
+      :format-time-with-hours="formatTimeWithHours"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
+// Import components
+import DesktopPlayer from '~/components/player/DesktopPlayer.vue'
+import MiniPlayer from '~/components/player/MiniPlayer.vue'
+
 // Props for shared state
 interface Props {
   // Theme
@@ -378,7 +266,7 @@ interface Props {
   formatDuration: (seconds: number) => string
 }
 
-const props = defineProps<Props>()
+defineProps<Props>()
 </script>
 
 <style scoped>
