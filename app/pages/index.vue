@@ -39,7 +39,7 @@
               <!-- Play Button -->
               <button
                 class="w-14 h-14 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center text-white shadow-lg transition-all hover:bg-white/30 active:scale-95"
-                :disabled="!currentSurah || !currentReciter" :class="{ 'bg-red-500/80': error }" @click="togglePlay()">
+                :disabled="isLoading" :class="{ 'bg-red-500/80': error }" @click="playFromHero">
                 <UIcon v-if="!isLoading && !error" :name="isPlaying ? 'i-heroicons-pause' : 'i-heroicons-play'"
                   class="w-6 h-6" :class="{ 'ml-1': !isPlaying }" />
                 <UIcon v-else-if="error" name="i-heroicons-exclamation-triangle" class="w-6 h-6" />
@@ -513,7 +513,7 @@
             <div class="w-full max-w-2xl mx-auto">
               <!-- Large Album Art Section -->
               <div class="text-center mb-8">
-                <div class="relative w-80 h-80 mx-auto mb-6">
+                <div class="relative w-60 h-60 mx-auto mb-6">
                   <!-- Album Art Container -->
                   <div class="w-full h-full rounded-3xl overflow-hidden shadow-2xl bg-gradient-to-br from-amber-400 via-orange-500 to-red-600 dark:from-indigo-400 dark:via-purple-500 dark:to-pink-600">
                     <div class="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-80" style="background-image: url('/bg.webp')" />
@@ -536,9 +536,19 @@
                   <h2 class="text-3xl font-bold text-slate-900 dark:text-slate-100 mb-2">
                     {{ getCurrentSurahName().split('.')[1]?.trim() || 'อัล-ฟาติหะฮฺ' }}
                   </h2>
-                  <p class="text-lg text-slate-600 dark:text-slate-400">
-                    เสียงแปลโดย {{ getCurrentReciterName }}
-                  </p>
+                  <div class="flex items-center justify-center gap-2">
+                    <span class="text-lg text-slate-600 dark:text-slate-400">เสียงแปลโดย</span>
+                    <!-- Reciter Selector in Player Mode -->
+                    <div class="relative">
+                      <select
+                        class="px-3 py-2 border border-[rgb(191,179,147)]/30 dark:border-[rgb(171,159,127)]/30 rounded-full bg-gradient-to-r from-[rgb(191,179,147)]/10 to-[rgb(171,159,127)]/10 dark:from-[rgb(35,32,48)] dark:to-[rgb(25,22,38)] text-slate-900 dark:text-[rgb(191,179,147)] text-sm appearance-none pr-8 shadow-sm hover:shadow-md transition-all"
+                        :value="currentReciterId" @change="onDesktopReciterChange">
+                        <option value="1">บรรจง โซะมณี</option>
+                        <option value="2">อุมัร สุจิตวรรณศรี</option>
+                      </select>
+                      <UIcon name="i-heroicons-chevron-down" class="absolute right-2 top-1/2 transform -translate-y-1/2 w-4 h-4 text-[rgb(191,179,147)] dark:text-[rgb(171,159,127)] pointer-events-none" />
+                    </div>
+                  </div>
                 </div>
 
                 <!-- Progress Bar -->
@@ -548,7 +558,7 @@
                     <span class="text-sm text-slate-500 dark:text-slate-400">{{ getCurrentSurahTotalDuration() || formatTimeWithHours(duration) || '0:00' }}</span>
                   </div>
                   <div class="w-full h-2 bg-slate-200 dark:bg-slate-700 rounded-full cursor-pointer" @click="seekToClick">
-                    <div class="h-full bg-gradient-to-r from-indigo-500 to-purple-600 rounded-full transition-all duration-300"
+                    <div class="h-full bg-gradient-to-r from-[rgb(191,179,147)] to-[rgb(171,159,127)] dark:from-[rgb(191,179,147)] dark:to-[rgb(171,159,127)] rounded-full transition-all duration-300"
                       :style="{ width: correctProgress + '%' }" />
                   </div>
                 </div>
@@ -557,62 +567,57 @@
                 <div class="flex items-center justify-center gap-6 mb-8">
                   <!-- Previous -->
                   <button
-                    class="w-14 h-14 rounded-full bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 flex items-center justify-center transition-all active:scale-95"
+                    class="w-14 h-14 rounded-full bg-gradient-to-br from-[rgb(191,179,147)] to-[rgb(171,159,127)] dark:from-[rgb(191,179,147)] dark:to-[rgb(171,159,127)] hover:from-[rgb(201,189,157)] hover:to-[rgb(181,169,137)] dark:hover:from-[rgb(201,189,157)] dark:hover:to-[rgb(181,169,137)] flex items-center justify-center transition-all active:scale-95 shadow-md hover:shadow-lg"
                     :disabled="isFirstVerse" :class="{ 'opacity-50': isFirstVerse }" @click="previousVerse">
-                    <UIcon name="i-heroicons-backward" class="w-6 h-6 text-slate-700 dark:text-slate-300" />
+                    <UIcon name="i-heroicons-backward" class="w-6 h-6 text-white" />
                   </button>
 
                   <!-- Play/Pause -->
                   <button
-                    class="w-20 h-20 rounded-full bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 flex items-center justify-center text-white transition-all active:scale-95 shadow-lg"
+                    class="w-20 h-20 rounded-full bg-gradient-to-br from-[rgb(191,179,147)] to-[rgb(171,159,127)] dark:from-[rgb(191,179,147)] dark:to-[rgb(171,159,127)] hover:from-[rgb(201,189,157)] hover:to-[rgb(181,169,137)] dark:hover:from-[rgb(201,189,157)] dark:hover:to-[rgb(181,169,137)] flex items-center justify-center text-white transition-all active:scale-95 shadow-xl"
                     :disabled="!currentSurah || !currentReciter" @click="togglePlay()">
                     <UIcon v-if="!isLoading && !error" :name="isPlaying ? 'i-heroicons-pause' : 'i-heroicons-play'"
-                      class="w-8 h-8" :class="{ 'ml-1': !isPlaying }" />
-                    <UIcon v-else-if="error" name="i-heroicons-exclamation-triangle" class="w-8 h-8" />
+                      class="w-8 h-8 text-white" :class="{ 'ml-1': !isPlaying }" />
+                    <UIcon v-else-if="error" name="i-heroicons-exclamation-triangle" class="w-8 h-8 text-white" />
                     <div v-else class="w-8 h-8 animate-spin rounded-full border-3 border-white border-t-transparent" />
                   </button>
 
                   <!-- Next -->
                   <button
-                    class="w-14 h-14 rounded-full bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 flex items-center justify-center transition-all active:scale-95"
+                    class="w-14 h-14 rounded-full bg-gradient-to-br from-[rgb(191,179,147)] to-[rgb(171,159,127)] dark:from-[rgb(191,179,147)] dark:to-[rgb(171,159,127)] hover:from-[rgb(201,189,157)] hover:to-[rgb(181,169,137)] dark:hover:from-[rgb(201,189,157)] dark:hover:to-[rgb(181,169,137)] flex items-center justify-center transition-all active:scale-95 shadow-md hover:shadow-lg"
                     :disabled="isLastVerse" :class="{ 'opacity-50': isLastVerse }" @click="nextVerse">
-                    <UIcon name="i-heroicons-forward" class="w-6 h-6 text-slate-700 dark:text-slate-300" />
+                    <UIcon name="i-heroicons-forward" class="w-6 h-6 text-white" />
                   </button>
                 </div>
 
                 <!-- Player Mode Controls -->
                 <div class="flex items-center justify-center gap-4">
                   <button
-                    class="w-12 h-12 rounded-full flex items-center justify-center transition-all hover:bg-slate-100 dark:hover:bg-slate-700"
-                    :class="shufflePlay ? 'bg-indigo-100 dark:bg-indigo-900/50 text-indigo-600 dark:text-indigo-400' : 'text-slate-400'"
+                    class="w-12 h-12 rounded-full flex items-center justify-center transition-all"
+                    :class="shufflePlay
+                      ? 'bg-gradient-to-br from-[rgb(191,179,147)] to-[rgb(171,159,127)] dark:from-[rgb(191,179,147)] dark:to-[rgb(171,159,127)] text-white shadow-lg hover:shadow-xl hover:from-[rgb(201,189,157)] hover:to-[rgb(181,169,137)]'
+                      : 'text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700'"
                     @click="toggleShufflePlay">
                     <UIcon name="i-lucide-shuffle" class="w-5 h-5" />
                   </button>
 
                   <button
-                    class="w-12 h-12 rounded-full flex items-center justify-center transition-all hover:bg-slate-100 dark:hover:bg-slate-700"
-                    :class="loopPlay ? 'bg-indigo-100 dark:bg-indigo-900/50 text-indigo-600 dark:text-indigo-400' : 'text-slate-400'"
+                    class="w-12 h-12 rounded-full flex items-center justify-center transition-all"
+                    :class="loopPlay
+                      ? 'bg-gradient-to-br from-[rgb(191,179,147)] to-[rgb(171,159,127)] dark:from-[rgb(191,179,147)] dark:to-[rgb(171,159,127)] text-white shadow-lg hover:shadow-xl hover:from-[rgb(201,189,157)] hover:to-[rgb(181,169,137)]'
+                      : 'text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700'"
                     @click="toggleLoopPlay">
                     <UIcon name="i-heroicons-arrow-path-rounded-square" class="w-5 h-5" />
                   </button>
 
                   <button
-                    class="w-12 h-12 rounded-full flex items-center justify-center transition-all hover:bg-slate-100 dark:hover:bg-slate-700"
-                    :class="autoPlayNext ? 'bg-indigo-100 dark:bg-indigo-900/50 text-indigo-600 dark:text-indigo-400' : 'text-slate-400'"
+                    class="w-12 h-12 rounded-full flex items-center justify-center transition-all"
+                    :class="autoPlayNext
+                      ? 'bg-gradient-to-br from-[rgb(191,179,147)] to-[rgb(171,159,127)] dark:from-[rgb(191,179,147)] dark:to-[rgb(171,159,127)] text-white shadow-lg hover:shadow-xl hover:from-[rgb(201,189,157)] hover:to-[rgb(181,169,137)]'
+                      : 'text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700'"
                     @click="toggleAutoPlayNext">
                     <UIcon name="i-lucide-infinity" class="w-5 h-5" />
                   </button>
-
-                  <!-- Reciter Selector in Player Mode -->
-                  <div class="relative ml-4">
-                    <select
-                      class="px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-full bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 text-sm appearance-none pr-8"
-                      :value="currentReciterId" @change="onDesktopReciterChange">
-                      <option value="1">บรรจง โซะมณี</option>
-                      <option value="2">อุมัร สุจิตวรรณศรี</option>
-                    </select>
-                    <UIcon name="i-heroicons-chevron-down" class="absolute right-2 top-1/2 transform -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
-                  </div>
                 </div>
 
                 <!-- Status Messages -->
@@ -694,6 +699,7 @@ const {
   setSelectedReciter
 } = useReciters();
 
+
 // Audio player - Native HTML5 audio for reliable streaming
 const {
   isPlaying,
@@ -717,7 +723,6 @@ const {
   isBuffering,
   networkType,
   // Player configuration
-  playerMode,
   shufflePlay,
   loopPlay,
   autoPlayNext,
@@ -993,6 +998,7 @@ const onReciterChanged = async (reciterId: number) => {
 
 // Initialize with default values
 onMounted(() => {
+
   // Watch for selectedReciter changes and load surahs accordingly
   watch(
     () => selectedReciter.value,
