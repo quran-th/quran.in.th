@@ -59,7 +59,6 @@ export const useLocalStorage = () => {
         ...parsed
       }
 
-      console.log(`📱 Loaded player state from localStorage:`, state)
       return state
 
     } catch (error) {
@@ -76,7 +75,6 @@ export const useLocalStorage = () => {
 
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(state))
-      console.log('📱 Player state saved to localStorage')
     } catch (error) {
       console.warn('Failed to save player state to localStorage:', error)
     }
@@ -131,7 +129,6 @@ export const useLocalStorage = () => {
     currentState.currentSurah = surahId
     currentState.currentTime = currentTime
     savePlayerState(currentState)
-    console.log(`📱 Atomic update: Surah ${surahId} at ${currentTime.toFixed(1)}s`)
   }
 
   // Clear all stored data (for debugging or user reset)

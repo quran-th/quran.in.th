@@ -1,9 +1,20 @@
 // Quran Audio Player Service Worker (2025)
-// Advanced caching for large audio files with streaming optimizations
+// Advanced caching with automatic deployment-based cache cleanup
 
-const CACHE_NAME = 'quran-audio-v1'
-const AUDIO_CACHE = 'quran-audio-files-v1'
-const STATIC_CACHE = 'quran-static-v1'
+// Version-based cache management for deployment updates
+const CACHE_VERSION = '2025-v1.0.8' // Update this on new deployments
+const CACHE_NAME = `quran-audio-${CACHE_VERSION}`
+const AUDIO_CACHE = `quran-audio-files-${CACHE_VERSION}`
+const STATIC_CACHE = `quran-static-${CACHE_VERSION}`
+
+// Log service worker version on startup
+console.log(`🔄 Quran Audio Player SW ${CACHE_VERSION} loaded`)
+
+// Expose version check function
+self.getServiceWorkerVersion = () => {
+  console.log(`🔄 Service Worker Version: ${CACHE_VERSION}`)
+  return CACHE_VERSION
+}
 
 // Static assets to cache
 const STATIC_ASSETS = [
@@ -18,39 +29,41 @@ const LARGE_FILE_THRESHOLD = 10 * 1024 * 1024 // 10MB
 const MAX_AUDIO_CACHE_SIZE = 500 * 1024 * 1024 // 500MB for audio files
 
 self.addEventListener('install', (event) => {
-  console.log('[SW] Installing service worker')
-  
+  console.log(`[SW] Installing service worker version: ${CACHE_VERSION}`)
+
   event.waitUntil(
     caches.open(STATIC_CACHE).then((cache) => {
       return cache.addAll(STATIC_ASSETS)
     })
   )
-  
+
   // Skip waiting to activate immediately
   self.skipWaiting()
 })
 
 self.addEventListener('activate', (event) => {
-  console.log('[SW] Activating service worker')
-  
+  console.log(`[SW] Activating service worker version: ${CACHE_VERSION}`)
+
   event.waitUntil(
-    // Clean up old caches
-    caches.keys().then((cacheNames) => {
-      return Promise.all(
-        cacheNames.map((cacheName) => {
-          if (cacheName !== CACHE_NAME && 
-              cacheName !== AUDIO_CACHE && 
-              cacheName !== STATIC_CACHE) {
-            console.log('[SW] Deleting old cache:', cacheName)
-            return caches.delete(cacheName)
-          }
-        })
-      )
-    })
+    Promise.all([
+      // Clean up all old caches that don't match current version
+      caches.keys().then((cacheNames) => {
+        return Promise.all(
+          cacheNames.map((cacheName) => {
+            // Delete any cache that doesn't match current version
+            if (cacheName !== CACHE_NAME &&
+                cacheName !== AUDIO_CACHE &&
+                cacheName !== STATIC_CACHE) {
+              console.log('[SW] Deleting outdated cache:', cacheName)
+              return caches.delete(cacheName)
+            }
+          })
+        )
+      }),
+      // Claim all clients immediately for instant updates
+      self.clients.claim()
+    ])
   )
-  
-  // Claim all clients immediately
-  event.waitUntil(self.clients.claim())
 })
 
 self.addEventListener('fetch', (event) => {
@@ -126,21 +139,26 @@ async function handleAudioRequest(request) {
     if (networkResponse.ok) {
       // Clone response for caching
       const responseToCache = networkResponse.clone()
-      
-      // Only cache if file is not too large and we have space
-      const contentLength = networkResponse.headers.get('content-length')
-      if (contentLength && parseInt(contentLength) < LARGE_FILE_THRESHOLD) {
-        // Check cache size before adding
-        const cacheSize = await getCacheSize(AUDIO_CACHE)
-        if (cacheSize < MAX_AUDIO_CACHE_SIZE) {
-          await cache.put(request, responseToCache)
-          console.log('[SW] Cached audio file:', url.pathname)
-        } else {
-          console.log('[SW] Cache full, not caching:', url.pathname)
-          // Could implement LRU eviction here
+
+      // Only cache complete responses (200), not partial responses (206)
+      if (networkResponse.status === 200) {
+        // Only cache if file is not too large and we have space
+        const contentLength = networkResponse.headers.get('content-length')
+        if (contentLength && parseInt(contentLength) < LARGE_FILE_THRESHOLD) {
+          // Check cache size before adding
+          const cacheSize = await getCacheSize(AUDIO_CACHE)
+          if (cacheSize < MAX_AUDIO_CACHE_SIZE) {
+            await cache.put(request, responseToCache)
+            console.log('[SW] Cached audio file:', url.pathname)
+          } else {
+            console.log('[SW] Cache full, not caching:', url.pathname)
+            // Could implement LRU eviction here
+          }
         }
+      } else if (networkResponse.status === 206) {
+        console.log('[SW] Skipping cache for partial response (206):', url.pathname)
       }
-      
+
       return networkResponse
     }
     

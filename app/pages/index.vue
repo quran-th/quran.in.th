@@ -734,7 +734,7 @@ const {
 // Selection state - initialize with saved surah from localStorage
 const savedSurah = currentSurah.value || 1; // Get saved surah or default to Al-Fatiha
 const selectedSurahValue = ref<number | undefined>(savedSurah);
-const currentReciterId = ref<number>(1); // Default to first reciter
+const currentReciterId = ref<number>(currentReciter.value || 2); // Use localStorage or default to reciter 2
 
 console.log(`🎯 Initialized selectedSurahValue with: ${savedSurah} ${savedSurah === currentSurah.value ? '(from localStorage)' : '(default Al-Fatiha)'}`)
 

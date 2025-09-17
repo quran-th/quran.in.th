@@ -92,7 +92,7 @@ const {
 
 // Local state
 const showModal = ref(false)
-const selectedReciterId = ref<number>(1) // Default to first reciter
+const selectedReciterId = ref<number>(selectedReciter.value?.reciter_id || 2) // Use localStorage or default to reciter 2
 
 // Modal now uses v-model:open for proper programmatic control
 

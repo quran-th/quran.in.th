@@ -46,6 +46,9 @@ export const useAudioPlayer = () => {
   // Track last saved time to prevent excessive localStorage updates
   let lastSavedTime = 0
 
+  // Track playback session state
+  let isResumingFromPause = false
+
   // Network type detection (preserved from original)
   const networkType = ref<'cellular' | 'wifi' | 'unknown'>('unknown')
   
@@ -194,7 +197,7 @@ export const useAudioPlayer = () => {
   }
 
   // Load and configure Howl for streaming large audio files
-  const loadAudio = async (surahId: number, reciterId: number) => {
+  const loadAudio = async (surahId: number, reciterId: number, resumeFromPause = false) => {
     try {
       // Cleanup previous Howl instance
       if (currentHowl.value) {
@@ -248,18 +251,21 @@ export const useAudioPlayer = () => {
           state.duration = howl.duration()
           state.isLoading = false
 
-          // Restore saved position if available, valid, and matches current surah
+          // Handle time restoration based on context
           const savedTime = initialState.currentTime || 0
           const savedSurah = initialState.currentSurah
           const currentSurahId = state.currentSurah
 
-          if (savedTime > 0 && savedTime < state.duration && savedSurah === currentSurahId) {
+          if (resumeFromPause && savedTime > 0 && savedTime < state.duration && savedSurah === currentSurahId) {
+            // Scenario 2: Resuming from pause - restore saved position
             howl.seek(savedTime)
             state.currentTime = savedTime
-            console.log(`[HowlerPlayer] Restored saved position: ${savedTime.toFixed(1)}s for Surah ${currentSurahId}`)
-          } else if (savedTime > 0 && savedSurah !== currentSurahId) {
-            console.log(`[HowlerPlayer] Skipping position restore - saved position (${savedTime.toFixed(1)}s) was for Surah ${savedSurah}, now playing Surah ${currentSurahId}`)
-            // Reset saved time since we're playing a different surah
+          } else {
+            // Scenario 1: Loading saved surah from localStorage - start from beginning
+            howl.seek(0)
+            state.currentTime = 0
+
+            // Reset saved time for new playback session
             localStorage.updateCurrentState(currentSurahId, 0)
           }
 
@@ -335,10 +341,10 @@ export const useAudioPlayer = () => {
                 updateMediaSessionPositionState()
               }
 
-              // Save current state (surah + time) to localStorage every 5 seconds
-              const currentFiveSecondMark = Math.floor(seek / 5) * 5
-              if (currentFiveSecondMark !== lastSavedTime && currentFiveSecondMark % 5 === 0 && state.currentSurah) {
-                lastSavedTime = currentFiveSecondMark
+              // Save current state (surah + time) to localStorage every 10 seconds
+              const currentTenSecondMark = Math.floor(seek / 10) * 10
+              if (currentTenSecondMark !== lastSavedTime && currentTenSecondMark % 10 === 0 && state.currentSurah) {
+                lastSavedTime = currentTenSecondMark
                 localStorage.updateCurrentState(state.currentSurah, seek)
               }
             }
@@ -361,15 +367,25 @@ export const useAudioPlayer = () => {
   // Playback controls
   const play = async () => {
     if (!currentHowl.value) return
-    
+
     try {
       isBuffering.value = true
+
+      // If resuming from a paused state and we have a saved time for same surah, seek to it
+      const savedTime = initialState.currentTime || 0
+      const savedSurah = initialState.currentSurah
+      if (isResumingFromPause && savedTime > 0 && savedSurah === state.currentSurah) {
+        currentHowl.value.seek(savedTime)
+        state.currentTime = savedTime
+        isResumingFromPause = false // Reset flag
+      }
+
       soundId.value = currentHowl.value.play() as number
-      
+
       // Set volume and rate
       currentHowl.value.volume(state.volume / 100)
       currentHowl.value.rate(playbackRate.value)
-      
+
     } catch (error) {
       console.error('[HowlerPlayer] Error playing audio:', error)
       state.error = 'Failed to play audio'
@@ -381,6 +397,9 @@ export const useAudioPlayer = () => {
     if (!currentHowl.value) return
 
     currentHowl.value.pause()
+
+    // Set flag for resume functionality
+    isResumingFromPause = true
 
     // Save current state (surah + time) when pausing
     if (state.currentSurah) {

@@ -23,7 +23,7 @@ export default defineNuxtConfig({
         { name: 'msapplication-TileImage', content: '/ms-icon-144x144.png' }
       ],
       link: [
-        { rel: 'manifest', href: '/manifest.json' },
+        { rel: 'manifest', href: `/manifest.json?v=${Date.now()}` },
         { rel: 'apple-touch-icon', sizes: '57x57', href: '/apple-icon-57x57.png' },
         { rel: 'apple-touch-icon', sizes: '60x60', href: '/apple-icon-60x60.png' },
         { rel: 'apple-touch-icon', sizes: '72x72', href: '/apple-icon-72x72.png' },
@@ -38,6 +38,35 @@ export default defineNuxtConfig({
         { rel: 'icon', type: 'image/png', sizes: '96x96', href: '/favicon-96x96.png' },
         { rel: 'icon', type: 'image/png', sizes: '16x16', href: '/favicon-16x16.png' },
       ]
+    }
+  },
+
+  // Route-specific caching rules
+  routeRules: {
+    // HTML pages - prevent caching to ensure fresh asset URLs
+    '/': {
+      prerender: true,
+      headers: {
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0'
+      }
+    },
+    // Service worker - prevent caching for updates
+    '/sw.js': {
+      headers: {
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0'
+      }
+    },
+    // Manifest - prevent caching for PWA updates
+    '/manifest.json': {
+      headers: {
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0'
+      }
     }
   },
 

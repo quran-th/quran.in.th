@@ -38,12 +38,12 @@ export const useReciters = () => {
       if (savedReciterId) {
         setSelectedReciter(parseInt(savedReciterId))
       } else {
-        // Default to first reciter (บรรจง โซะมณี)
-        setSelectedReciter(1)
+        // Default to reciter 2 (อุมัร สุจิตวรรณศรี)
+        setSelectedReciter(2)
       }
     } else {
       // Server-side default
-      setSelectedReciter(1)
+      setSelectedReciter(2)
     }
   }
   
