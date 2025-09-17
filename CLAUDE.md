@@ -90,7 +90,7 @@ app/                           # Main application source code
 │   └── ReciterSelector.vue   # Reciter selection modal component
 ├── composables/              # Vue composition functions (business logic)
 │   ├── useAudioPlayer.ts     # Core audio playback state and controls
-│   ├── useAudioConfig.ts     # Audio configuration and environment setup
+│   ├── useLocalStorage.ts    # Local storage state management
 │   ├── useReciters.ts        # Reciter data management
 │   └── useSurahs.ts          # Surah data management and filtering
 ├── types/                    # TypeScript interface definitions
@@ -116,6 +116,18 @@ public/                       # Static assets served directly
 ├── manifest.json            # PWA configuration and metadata
 └── sw.js                    # Service worker for offline functionality
 
+server/                       # Server-side API and middleware
+├── api/                     # API endpoint handlers
+│   ├── audio/              # Audio streaming endpoints
+│   │   └── [reciterId]/    # Dynamic reciter-specific routes
+│   │       └── [id].get.ts # Audio file streaming with R2 integration
+│   └── surahs/             # Surah metadata endpoints
+│       └── [reciterId].get.ts # Reciter-specific surah data
+├── middleware/              # Server middleware
+│   └── cache-control.ts    # HTTP cache header management
+├── plugins/                # Server plugins
+└── utils/                  # Server utility functions
+
 docs/knowledge-base/         # Comprehensive project documentation
 ├── README.md               # Knowledge base overview and navigation
 ├── architecture.md         # System design and technical architecture
@@ -137,7 +149,7 @@ The app is configured for Cloudflare Workers deployment with:
 - **Responsive Design**: Mobile circular player and desktop playlist layout
 - **Audio Streaming**: Integration with Quran audio CDN services
 - **Media Session API**: Native audio controls and background playbook
-- **Progressive Web App**: Offline-first with service worker support
+- **Progressive Web App**: Advanced service worker with automatic updates and version-based cache management
 - **Thai Language**: Full Thai language support with custom fonts
 - **Dark Mode**: Complete dark/light theme switching
 - **Surah Selection**: Slide-up modal for mobile surah browsing
@@ -157,6 +169,10 @@ The app is configured for Cloudflare Workers deployment with:
 - **Progressive Web App:** Service worker implementation for offline audio caching and background playback
 - **Thai Font Integration:** Custom InterThaiLoopless font family with full weight range for optimal Thai text rendering
 - **Media Session API:** Native audio control integration for lock screen and notification controls
+- **Version-Based Cache Management:** Manual cache versioning system (CACHE_VERSION) for reliable deployment updates without Workbox dependencies
+- **Granular Cache Control:** Server middleware providing fine-grained HTTP cache headers for HTML, service worker, and manifest files
+- **Smart State Restoration:** Separation of localStorage restoration (starts from beginning) from pause/resume functionality (continues from pause point)
+- **Default Reciter Strategy:** Standardized reciter 2 as fallback while prioritizing localStorage preferences across all components
 
 #### Performance Optimizations
 - **WebP Image Format:** Background images optimized for faster loading
@@ -164,6 +180,9 @@ The app is configured for Cloudflare Workers deployment with:
 - **Edge-First Deployment:** Cloudflare Workers for sub-100ms cold starts globally
 - **Progressive Audio Loading:** Smart preloading strategy based on user behavior and network conditions
 - **Tailwind CSS Purging:** Automatic removal of unused CSS classes in production builds
+- **Advanced Caching Strategy:** Version-based cache management with automatic deployment cleanup
+- **HTML Cache Prevention:** Multi-layer approach preventing HTML caching while optimizing asset delivery
+- **Intelligent State Persistence:** Smart localStorage management with session-aware restoration
 
 #### Development Workflow Standards
 - **Code Quality:** ESLint with @nuxt/eslint configuration for consistent code style
