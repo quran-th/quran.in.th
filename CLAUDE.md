@@ -67,8 +67,10 @@ Generates TypeScript types for Cloudflare Workers
 - **Type Safety:** Comprehensive TypeScript interfaces and runtime validation
 
 ### Core Architecture Patterns
+- **Modular Component Architecture:** Highly organized component system with clear separation of concerns
 - **Composable-Based State:** Reactive state management with `useAudioPlayer`, `useReciters`, `useSurahs`
-- **Responsive Component Design:** Mobile-first with `md:` breakpoint at 768px
+- **Responsive Component Design:** Mobile-first with `md:` breakpoint at 768px, dedicated mobile/desktop components
+- **Type-Safe Component System:** All components use strongly-typed TypeScript interfaces
 - **Environment-Aware Audio:** Development (local files) vs Production (R2/CDN streaming)
 - **Progressive Enhancement:** Base functionality + enhanced features based on capabilities
 - **Edge-Optimized Deployment:** Static generation with dynamic audio streaming
@@ -86,8 +88,25 @@ Generates TypeScript types for Cloudflare Workers
 app/                           # Main application source code
 ├── pages/index.vue           # Primary responsive page (mobile + desktop layouts)
 ├── app.vue                   # Root app component with global layout
-├── components/               # Vue component library
-│   └── ReciterSelector.vue   # Reciter selection modal component
+├── components/               # Modular Vue component library
+│   ├── headers/              # Header components for different layouts
+│   │   ├── MobileHeader.vue  # Mobile app header with branding and dark mode toggle
+│   │   └── DesktopHeader.vue # Desktop header with player mode toggle
+│   ├── layouts/              # Layout orchestration components
+│   │   ├── MobileLayout.vue  # Mobile responsive layout with tab navigation
+│   │   └── DesktopLayout.vue # Desktop layout with hero section and playlist
+│   ├── player/               # Audio player components
+│   │   ├── MobilePlayer.vue  # Compact circular player for mobile devices
+│   │   ├── DesktopPlayer.vue # Large format player with album art
+│   │   └── MiniPlayer.vue    # Bottom mini player for desktop mode
+│   ├── ui/                   # Reusable UI components
+│   │   ├── SurahCardList.vue # Scrollable surah cards with play buttons
+│   │   ├── ReciterList.vue   # Reciter selection with visual indicators
+│   │   ├── TabNavigation.vue # Mobile tab navigation component
+│   │   └── HeroSection.vue   # Desktop hero section with call-to-action
+│   ├── modals/               # Modal and overlay components
+│   │   └── PlayerConfigModal.vue # Player configuration (shuffle, loop, autoplay)
+│   └── ReciterSelector.vue   # Legacy reciter selection modal (preserved)
 ├── composables/              # Vue composition functions (business logic)
 │   ├── useAudioPlayer.ts     # Core audio playback state and controls
 │   ├── useLocalStorage.ts    # Local storage state management
@@ -144,24 +163,51 @@ The app is configured for Cloudflare Workers deployment with:
 - Observability enabled
 - Node.js compatibility enabled
 
+### Component Architecture & Rendering Approach
+
+The application follows a **modular component architecture** with clear separation of concerns:
+
+#### Component Organization Strategy
+- **Headers** (`headers/`): Platform-specific header components with branding and navigation
+- **Layouts** (`layouts/`): Layout orchestration components that compose other components
+- **Player** (`player/`): Specialized audio player components for different form factors
+- **UI** (`ui/`): Reusable UI components for lists, navigation, and content sections
+- **Modals** (`modals/`): Overlay components for configuration and selection interfaces
+
+#### Rendering Patterns
+- **Responsive Component Selection**: Different components for mobile vs desktop instead of CSS-only responsive design
+- **Prop-Based Communication**: Parent components pass state and methods down through strongly-typed props
+- **Event-Driven Updates**: Child components emit events for state changes and user interactions
+- **Composition Over Inheritance**: Components are composed together rather than extending base classes
+
+#### Component Responsibilities
+- **Layout Components**: Orchestrate multiple components and manage overall page structure
+- **Player Components**: Handle audio playback UI and controls for specific device types
+- **UI Components**: Provide reusable interface elements with consistent styling and behavior
+- **Modal Components**: Manage overlay states and user configuration interfaces
+
 ### Application Features
 
-- **Responsive Design**: Mobile circular player and desktop playlist layout
-- **Audio Streaming**: Integration with Quran audio CDN services
-- **Media Session API**: Native audio controls and background playbook
+- **Responsive Design**: Dedicated mobile circular player and desktop playlist layout components
+- **Audio Streaming**: Integration with Quran audio CDN services through composable-based state management
+- **Media Session API**: Native audio controls and background playbook with cross-component state sync
 - **Progressive Web App**: Advanced service worker with automatic updates and version-based cache management
-- **Thai Language**: Full Thai language support with custom fonts
-- **Dark Mode**: Complete dark/light theme switching
-- **Surah Selection**: Slide-up modal for mobile surah browsing
-- **Real-time Progress**: Live audio progress tracking and seeking
+- **Thai Language**: Full Thai language support with custom fonts across all components
+- **Dark Mode**: Complete dark/light theme switching with component-level theme awareness
+- **Surah Selection**: Platform-specific selection interfaces (mobile tabs, desktop table)
+- **Real-time Progress**: Live audio progress tracking and seeking across all player components
 
 ### Development Notes
 
 #### Code Architecture Principles
-- **Composition API First:** All components use `<script setup lang="ts">` pattern
+- **Modular Component System:** 13 specialized components organized by function (headers, layouts, player, ui, modals)
+- **Composition API First:** All components use `<script setup lang="ts">` pattern with strict TypeScript
 - **Reactive State Management:** Centralized audio state via `useAudioPlayer()` composable
-- **Type-Safe Development:** TypeScript strict mode with comprehensive interface definitions
-- **Responsive-First Design:** Mobile breakpoint at 768px (`md:` prefix), circular player for mobile, table layout for desktop
+- **Type-Safe Development:** All components use strongly-typed interfaces (Surah, Reciter, AudioPlayerState)
+- **Component Separation:** Clear separation between player logic, UI elements, and layout orchestration
+- **Responsive-First Design:** Mobile breakpoint at 768px (`md:` prefix), dedicated mobile/desktop components
+- **Single Responsibility:** Each component has one focused purpose (SurahCardList, MobilePlayer, etc.)
+- **Event-Driven Communication:** Loose coupling through prop callbacks and emit events
 
 #### Key Technical Decisions
 - **Howler.js Audio Engine:** Chosen over native HTML5 Audio for advanced streaming control and cross-platform compatibility
@@ -187,9 +233,11 @@ The app is configured for Cloudflare Workers deployment with:
 #### Development Workflow Standards
 - **Code Quality:** ESLint with @nuxt/eslint configuration for consistent code style
 - **Type Safety:** Strict TypeScript validation with custom Quran domain interfaces
-- **Component Organization:** Single-file Vue components with scoped styling when needed
-- **State Isolation:** Business logic in composables, UI logic in components
+- **Component Organization:** Modular component system organized by function and purpose
+- **State Isolation:** Business logic in composables, UI logic in components, layout orchestration in layouts
+- **Component Documentation:** JSDoc comments with usage examples for all major components
 - **Error Handling:** Comprehensive error states for network failures and audio loading issues
+- **Component Testing:** Isolated component testing with proper TypeScript interface validation
 
 #### Testing & Quality Assurance
 - **Cross-Browser Testing:** Chrome, Firefox, Safari, mobile browsers

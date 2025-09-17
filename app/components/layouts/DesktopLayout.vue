@@ -1,77 +1,19 @@
 <template>
   <div class="min-h-screen bg-slate-50 dark:bg-slate-900">
     <!-- Large Screen Header -->
-    <header class="p-6">
-      <div class="max-w-5xl mx-auto">
-        <div class="flex items-center justify-between">
-          <div>
-            <h1 class="text-2xl font-bold text-slate-900 dark:text-slate-100">
-              อัลกุรอาน
-            </h1>
-            <p class="text-slate-500 dark:text-slate-400">ฟังกุรอานพร้อมความหมายภาษาไทย</p>
-          </div>
-          <div class="flex items-center gap-3">
-            <button
-              class="px-3 py-1.5 rounded-full text-sm font-medium transition-all"
-              :class="isLargePlayerMode
-                ? 'bg-indigo-100 dark:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300'
-                : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'"
-              @click="togglePlayerMode">
-              <UIcon :name="isLargePlayerMode ? 'i-heroicons-list-bullet' : 'i-heroicons-play-circle'" class="w-4 h-4 mr-1" />
-              {{ isLargePlayerMode ? 'เพลย์ลิสต์' : 'โหมดเล่น' }}
-            </button>
-            <button class="w-8 h-8 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center"
-              @click="toggleDarkMode">
-              <UIcon :name="isDark ? 'i-heroicons-sun' : 'i-heroicons-moon'" class="w-4 h-4" />
-            </button>
-          </div>
-        </div>
-      </div>
-    </header>
+    <DesktopHeader
+      :is-dark="isDark"
+      :toggle-dark-mode="toggleDarkMode"
+      :is-large-player-mode="isLargePlayerMode"
+      :toggle-player-mode="togglePlayerMode"
+    />
 
     <!-- Main Content -->
     <main class="p-6">
       <div class="max-w-5xl mx-auto">
         <!-- Default Playlist Mode -->
         <div v-if="!isLargePlayerMode" class="animate-fade-in">
-          <section class="mb-12">
-            <!-- Hero Card -->
-            <div class="relative rounded-2xl overflow-hidden h-64">
-              <!-- Background Image -->
-              <div class="absolute inset-0 bg-cover bg-center bg-no-repeat" style="background-image: url('/bg.webp')" />
-
-              <!-- Gradient Overlay for better text readability -->
-              <div class="absolute inset-0 bg-gradient-to-r from-black/30 via-black/20 to-black/10" />
-
-              <!-- Additional shadow overlay -->
-              <div class="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
-
-              <!-- Content -->
-              <div class="relative z-10 p-8 h-full flex flex-col justify-between">
-                <div>
-                  <p class="text-white/80 text-sm mb-2" />
-                  <h3 class="text-white text-4xl font-bold mb-6">อัลกุรอาน<br>พร้อมคำแปลภาษาไทย</h3>
-
-                  <div class="flex gap-4">
-                    <button
-                      class="px-6 py-2 bg-black text-white rounded-full font-medium hover:bg-black/90 transition-colors flex items-center gap-2 cursor-pointer"
-                      :disabled="isLoading" :class="{ 'bg-red-600 hover:bg-red-700': error }" @click="playFromHero">
-                      <UIcon v-if="!isLoading && !error" :name="isPlaying ? 'i-heroicons-pause' : 'i-heroicons-play'"
-                        class="w-5 h-5" :class="{ 'ml-0.5': !isPlaying }" />
-                      <UIcon v-else-if="error" name="i-heroicons-exclamation-triangle" class="w-5 h-5" />
-                      <div v-else
-                        class="w-5 h-5 animate-spin rounded-full border-2 border-white border-t-transparent" />
-                      {{ error ? 'เกิดข้อผิดพลาด' : isLoading ? 'กำลังโหลด' : isPlaying ? 'หยุด' : 'เริ่ม' }}
-                    </button>
-                  </div>
-                </div>
-
-                <div class="text-right">
-                  <p class="text-white/60 text-sm mb-1">เสียงแปลโดย {{ getCurrentReciterName }}</p>
-                </div>
-              </div>
-            </div>
-          </section>
+          <HeroSection />
 
           <!-- My Playlist Section -->
           <section>
@@ -194,15 +136,6 @@
     <!-- Mini Player (Fixed Bottom) - Hide in Player Mode -->
     <MiniPlayer
       v-if="!isLargePlayerMode"
-      :is-playing="isPlaying"
-      :current-time="currentTime"
-      :current-surah="currentSurah"
-      :get-current-reciter-name="getCurrentReciterName"
-      :correct-progress="correctProgress"
-      :toggle-play="togglePlay"
-      :seek-to-click="seekToClick"
-      :get-current-surah-name="getCurrentSurahName"
-      :format-time-with-hours="formatTimeWithHours"
     />
   </div>
 </template>
@@ -211,62 +144,63 @@
 // Import components
 import DesktopPlayer from '~/components/player/DesktopPlayer.vue'
 import MiniPlayer from '~/components/player/MiniPlayer.vue'
+import DesktopHeader from '~/components/headers/DesktopHeader.vue'
+import HeroSection from '~/components/ui/HeroSection.vue'
 
-// Props for shared state
-interface Props {
+// Use integrated app composable instead of massive prop drilling
+const {
   // Theme
-  isDark: boolean
-  toggleDarkMode: () => void
+  isDark,
+  toggleDarkMode,
 
   // Audio player state
-  isPlaying: boolean
-  isLoading: boolean
-  currentTime: number
-  duration: number
-  currentSurah: number | null
-  currentReciter: any
-  isFirstVerse: boolean
-  isLastVerse: boolean
-  error: any
-  isBuffering: boolean
-  networkType: string | null
+  isPlaying,
+  isLoading,
+  currentTime,
+  duration,
+  currentSurah,
+  currentReciter,
+  isFirstVerse,
+  isLastVerse,
+  error,
+  isBuffering,
+  networkType,
 
   // Player configuration
-  shufflePlay: boolean
-  loopPlay: boolean
-  autoPlayNext: boolean
+  shufflePlay,
+  loopPlay,
+  autoPlayNext,
 
   // Data
-  surahs: any[]
-  currentReciterId: number
+  surahs,
+  currentReciterId,
 
   // Computed
-  getCurrentReciterName: string
-  correctProgress: number
+  currentReciterName,
+  getCurrentReciterName,
+  correctProgress,
 
   // Desktop-specific state
-  isLargePlayerMode: boolean
+  isLargePlayerMode,
 
   // Methods
-  playFromHero: () => Promise<void>
-  previousVerse: () => void
-  nextVerse: () => void
-  togglePlay: () => Promise<void>
-  seekToClick: (event: MouseEvent) => void
-  selectAndPlaySurah: (surahId: number) => Promise<void>
-  onDesktopReciterChange: (event: Event) => Promise<void>
-  togglePlayerMode: () => void
-  toggleShufflePlay: () => void
-  toggleLoopPlay: () => void
-  toggleAutoPlayNext: () => void
-  getCurrentSurahName: () => string
-  getCurrentSurahRevelationPlace: () => string
-  getCurrentSurahTotalDuration: () => string
-  formatTimeWithHours: (seconds: number) => string
-  formatDuration: (seconds: number) => string
-}
-
-defineProps<Props>()
+  playFromHero,
+  previousVerse,
+  nextVerse,
+  togglePlay,
+  seekToClick,
+  selectAndPlaySurah,
+  onDesktopReciterChange,
+  togglePlayerMode,
+  toggleShufflePlay,
+  toggleLoopPlay,
+  toggleAutoPlayNext,
+  getCurrentSurahName,
+  getCurrentSurahRevelationPlace,
+  getCurrentSurahTotalDuration,
+  formatTimeWithHours,
+  formatDuration
+} = useAppIntegrated()
 </script>
 
 <style scoped>

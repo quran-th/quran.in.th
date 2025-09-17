@@ -36,22 +36,21 @@
 
 <script setup lang="ts">
 // Props for mini player state
-interface Props {
+// Use integrated app composable instead of props
+const {
   // Audio player state
-  isPlaying: boolean
-  currentTime: number
-  currentSurah: number | null
+  isPlaying,
+  currentTime,
+  currentSurah,
 
   // Computed
-  getCurrentReciterName: string
-  correctProgress: number
+  getCurrentReciterName,
+  correctProgress,
 
   // Methods
-  togglePlay: () => Promise<void>
-  seekToClick: (event: MouseEvent) => void
-  getCurrentSurahName: () => string
-  formatTimeWithHours: (seconds: number) => string
-}
-
-defineProps<Props>()
+  togglePlay,
+  seekToClick,
+  getCurrentSurahName,
+  formatTimeWithHours
+} = useAppIntegrated()
 </script>

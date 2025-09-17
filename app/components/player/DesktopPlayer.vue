@@ -130,7 +130,21 @@
 </template>
 
 <script setup lang="ts">
-// Props for desktop player state
+/**
+ * DesktopPlayer Component
+ *
+ * Large-format audio player optimized for desktop displays.
+ * Features album art, comprehensive controls, and player mode toggles.
+ *
+ * @component
+ * @example
+ * <DesktopPlayer
+ *   :is-playing="isPlaying"
+ *   :current-surah="currentSurah"
+ *   :toggle-play="togglePlay"
+ *   :toggle-shuffle-play="toggleShufflePlay"
+ * />
+ */
 interface Props {
   // Audio player state
   isPlaying: boolean
@@ -138,10 +152,10 @@ interface Props {
   currentTime: number
   duration: number
   currentSurah: number | null
-  currentReciter: any
+  currentReciter: number | null
   isFirstVerse: boolean
   isLastVerse: boolean
-  error: any
+  error: string | null
   isBuffering: boolean
   networkType: string | null
 

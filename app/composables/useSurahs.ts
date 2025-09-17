@@ -1,10 +1,10 @@
 import type { Surah } from '~/types/quran'
 
 export const useSurahs = () => {
-  const surahsData = ref<Surah[]>([])
-  const isLoading = ref(true)
-  const error = ref<string | null>(null)
-  const currentReciterId = ref<number | null>(null)
+  const surahsData = useState<Surah[]>('surahs', () => [])
+  const isLoading = useState<boolean>('surahs-loading', () => true)
+  const error = useState<string | null>('surahs-error', () => null)
+  const currentReciterId = useState<number | null>('surahs-reciter-id', () => null)
 
   const loadSurahs = async (reciterId: number) => {
     try {
@@ -58,11 +58,11 @@ export const useSurahs = () => {
 
   const formatDuration = (seconds: number): string => {
     if (!seconds) return '0:00'
-    
+
     const hours = Math.floor(seconds / 3600)
     const minutes = Math.floor((seconds % 3600) / 60)
     const secs = Math.floor(seconds % 60)
-    
+
     if (hours > 0) {
       return `${hours}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`
     }
@@ -71,7 +71,7 @@ export const useSurahs = () => {
 
   const formatFileSize = (bytes: number): string => {
     if (!bytes) return '0 B'
-    
+
     const sizes = ['B', 'KB', 'MB', 'GB']
     const i = Math.floor(Math.log(bytes) / Math.log(1024))
     return `${(bytes / Math.pow(1024, i)).toFixed(1)} ${sizes[i]}`

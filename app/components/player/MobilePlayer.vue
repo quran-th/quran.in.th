@@ -93,39 +93,45 @@
 </template>
 
 <script setup lang="ts">
-// Props for player state
-interface Props {
-  // Audio player state
-  isPlaying: boolean
-  isLoading: boolean
-  currentTime: number
-  duration: number
-  isFirstVerse: boolean
-  isLastVerse: boolean
-  error: any
-  isBuffering: boolean
-  networkType: string | null
+/**
+ * MobilePlayer Component
+ *
+ * A compact circular player card optimized for mobile devices.
+ * Features play controls, track info, progress bar, and configuration access.
+ * Now uses useState-based state management instead of props.
+ */
+
+// Use integrated app composable instead of props
+const {
+  // Audio state
+  isPlaying,
+  isLoading,
+  currentTime,
+  duration,
+  isFirstVerse,
+  isLastVerse,
+  error,
+  isBuffering,
+  networkType,
 
   // Player configuration
-  shufflePlay: boolean
-  loopPlay: boolean
+  shufflePlay,
+  loopPlay,
 
   // Computed values
-  getCurrentReciterName: string
-  correctProgress: number
+  getCurrentReciterName,
+  correctProgress,
 
   // Methods
-  playFromHero: () => Promise<void>
-  previousVerse: () => void
-  nextVerse: () => void
-  seekToClick: (event: MouseEvent) => void
-  getCurrentSurahName: () => string
-  getCurrentSurahRevelationPlace: () => string
-  getCurrentSurahTotalDuration: () => string
-  formatTimeWithHours: (seconds: number) => string
-}
-
-defineProps<Props>()
+  playFromHero,
+  previousVerse,
+  nextVerse,
+  seekToClick,
+  getCurrentSurahName,
+  getCurrentSurahRevelationPlace,
+  getCurrentSurahTotalDuration,
+  formatTimeWithHours
+} = useAppIntegrated()
 
 // Events
 defineEmits<{
