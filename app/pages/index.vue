@@ -731,9 +731,12 @@ const {
   toggleAutoPlayNext
 } = useAudioPlayer();
 
-// Selection state  
-const selectedSurahValue = ref<number | undefined>(undefined);
+// Selection state - initialize with saved surah from localStorage
+const savedSurah = currentSurah.value || 1; // Get saved surah or default to Al-Fatiha
+const selectedSurahValue = ref<number | undefined>(savedSurah);
 const currentReciterId = ref<number>(1); // Default to first reciter
+
+console.log(`🎯 Initialized selectedSurahValue with: ${savedSurah} ${savedSurah === currentSurah.value ? '(from localStorage)' : '(default Al-Fatiha)'}`)
 
 // Modal state
 const showPlayerConfig = ref(false);
@@ -901,13 +904,49 @@ const playFromHero = async () => {
     return;
   }
 
-  // If no surah selected or no audio loaded, default to first surah and load
+  // If no surah selected or no audio loaded, use saved surah or default to Al-Fatiha
   if (!selectedSurahValue.value) {
-    selectedSurahValue.value = 1; // Al-Fatiha
+    selectedSurahValue.value = currentSurah.value || 1; // Prioritize saved surah
+    console.log(`🎵 playFromHero: Selected surah ${selectedSurahValue.value} ${currentSurah.value ? '(from localStorage)' : '(default Al-Fatiha)'}`);
   }
 
   // Auto-play the selected audio
   await playSelectedAudio();
+};
+
+// Restore saved session automatically (surah + position)
+const restoreSavedSession = async () => {
+  if (!currentSurah.value) {
+    console.log('🔄 No saved session to restore');
+    return false;
+  }
+
+  try {
+    console.log(`🔄 Restoring saved session: Surah ${currentSurah.value} at ${currentTime.value || 0}s`);
+
+    // Ensure the saved surah is selected
+    if (selectedSurahValue.value !== currentSurah.value) {
+      selectedSurahValue.value = currentSurah.value;
+    }
+
+    // Load the saved audio (this will automatically restore position via onload handler)
+    await loadAudio(currentSurah.value, currentReciterId.value);
+
+    // Update MediaSession metadata
+    const surah = getSurahById(currentSurah.value);
+    if (surah) {
+      const surahDisplayName = `ซูเราะฮฺ ${surah.thaiName}`;
+      const reciterName = getCurrentReciterName.value;
+      updateMediaMetadata(surahDisplayName, `เสียงแปลโดย ${reciterName}`);
+    }
+
+    console.log(`✅ Session restored: Surah ${currentSurah.value} ready for playback`);
+    return true;
+
+  } catch (error) {
+    console.error('❌ Failed to restore saved session:', error);
+    return false;
+  }
 };
 
 // Helper method to play selected audio with auto-play
@@ -1013,13 +1052,25 @@ onMounted(() => {
     { immediate: true }
   );
 
-  // Set default surah (Al-Fatiha) when surahs are loaded
+  // Auto-restore saved session when surahs are loaded
   watch(
     () => surahs.value,
-    (newSurahs) => {
-      if (newSurahs.length > 0 && !selectedSurahValue.value) {
-        selectedSurahValue.value = 1; // Al-Fatiha
-        console.log(`🎯 Default surah set: Al-Fatiha (1)`);
+    async (newSurahs) => {
+      if (newSurahs.length > 0 && selectedSurahValue.value) {
+        // Attempt to restore saved session automatically
+        console.log(`📚 Surahs loaded (${newSurahs.length} items), attempting session restore...`);
+
+        if (currentSurah.value && currentSurah.value !== 1) {
+          // We have a saved session that's not Al-Fatiha, restore it
+          const restored = await restoreSavedSession();
+          if (restored) {
+            console.log(`✅ Auto-restored saved session for Surah ${currentSurah.value}`);
+          } else {
+            console.log(`⚠️ Failed to restore saved session, will use current selection`);
+          }
+        } else {
+          console.log(`🎯 Using default or selected surah: ${selectedSurahValue.value}`);
+        }
       }
     },
     { immediate: true },

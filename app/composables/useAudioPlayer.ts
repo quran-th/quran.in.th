@@ -12,7 +12,7 @@ export const useAudioPlayer = () => {
   const state = reactive<AudioPlayerState>({
     isPlaying: false,
     isLoading: false,
-    currentTime: 0,
+    currentTime: initialState.currentTime || 0,
     duration: 0,
     volume: initialState.volume,
     isMuted: false,
@@ -244,6 +244,22 @@ export const useAudioPlayer = () => {
         onload: () => {
           state.duration = howl.duration()
           state.isLoading = false
+
+          // Restore saved position if available, valid, and matches current surah
+          const savedTime = initialState.currentTime || 0
+          const savedSurah = initialState.currentSurah
+          const currentSurahId = state.currentSurah
+
+          if (savedTime > 0 && savedTime < state.duration && savedSurah === currentSurahId) {
+            howl.seek(savedTime)
+            state.currentTime = savedTime
+            console.log(`[HowlerPlayer] Restored saved position: ${savedTime.toFixed(1)}s for Surah ${currentSurahId}`)
+          } else if (savedTime > 0 && savedSurah !== currentSurahId) {
+            console.log(`[HowlerPlayer] Skipping position restore - saved position (${savedTime.toFixed(1)}s) was for Surah ${savedSurah}, now playing Surah ${currentSurahId}`)
+            // Reset saved time since we're playing a different surah
+            localStorage.updateCurrentState(currentSurahId, 0)
+          }
+
           console.log('[HowlerPlayer] Audio loaded successfully, duration:', state.duration)
         },
         onloaderror: (id, error) => {
@@ -307,14 +323,19 @@ export const useAudioPlayer = () => {
             const seek = currentHowl.value.seek() as number
             if (typeof seek === 'number' && isFinite(seek)) {
               state.currentTime = seek
-              
+
               // Update MediaSession position periodically
               if (Math.floor(seek) % 3 === 0) {
                 updateMediaSessionPositionState()
               }
+
+              // Save current state (surah + time) to localStorage every 5 seconds
+              if (Math.floor(seek) % 5 === 0 && state.currentSurah) {
+                localStorage.updateCurrentState(state.currentSurah, seek)
+              }
             }
           }
-          
+
           if (currentHowl.value) {
             requestAnimationFrame(updateTime)
           }
@@ -350,8 +371,13 @@ export const useAudioPlayer = () => {
 
   const pause = () => {
     if (!currentHowl.value) return
-    
+
     currentHowl.value.pause()
+
+    // Save current state (surah + time) when pausing
+    if (state.currentSurah) {
+      localStorage.updateCurrentState(state.currentSurah, state.currentTime)
+    }
   }
 
   const togglePlay = async () => {
@@ -616,6 +642,8 @@ export const useAudioPlayer = () => {
 
     // localStorage utilities
     clearPlayerState: localStorage.clearPlayerState,
-    getRandomSurah: localStorage.getRandomSurah
+    getRandomSurah: localStorage.getRandomSurah,
+    updateCurrentTime: localStorage.updateCurrentTime,
+    updateCurrentState: localStorage.updateCurrentState
   }
 }

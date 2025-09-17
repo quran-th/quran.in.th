@@ -3,6 +3,7 @@ const STORAGE_KEY = 'quran-th-player-state'
 export interface StoredPlayerState {
   currentSurah: number | null
   currentReciter: number | null
+  currentTime: number
   playerMode: 'autoNext' | 'shuffle' | 'loop' | 'none'
   volume: number
   playbackRate: number
@@ -16,6 +17,7 @@ export const useLocalStorage = () => {
   const getDefaultState = (): StoredPlayerState => ({
     currentSurah: null, // Will be set randomly for new users
     currentReciter: 2, // Default reciter 002
+    currentTime: 0, // Start from beginning for new users
     playerMode: 'autoNext', // Default to auto-play next surah
     volume: 80,
     playbackRate: 1.0,
@@ -117,6 +119,21 @@ export const useLocalStorage = () => {
     savePlayerState(currentState)
   }
 
+  const updateCurrentTime = (time: number) => {
+    const currentState = loadPlayerState()
+    currentState.currentTime = time
+    savePlayerState(currentState)
+  }
+
+  // Atomic update for current surah and time together to prevent state conflicts
+  const updateCurrentState = (surahId: number, currentTime: number) => {
+    const currentState = loadPlayerState()
+    currentState.currentSurah = surahId
+    currentState.currentTime = currentTime
+    savePlayerState(currentState)
+    console.log(`📱 Atomic update: Surah ${surahId} at ${currentTime.toFixed(1)}s`)
+  }
+
   // Clear all stored data (for debugging or user reset)
   const clearPlayerState = () => {
     if (!isClient()) return
@@ -138,6 +155,8 @@ export const useLocalStorage = () => {
     updateVolume,
     updatePlaybackRate,
     updateShowTranslation,
+    updateCurrentTime,
+    updateCurrentState, // Atomic update for surah + time
     clearPlayerState,
     getRandomSurah
   }
