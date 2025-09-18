@@ -74,7 +74,4 @@ const {
   formatDuration
 } = useAppIntegrated()
 
-// Debug: Log surahs data
-console.log('SurahCardList: surahs.value.length =', surahs.value.length)
-console.log('SurahCardList: First 3 surahs =', surahs.value.slice(0, 3).map(s => s.thaiName))
 </script>

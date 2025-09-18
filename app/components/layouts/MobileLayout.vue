@@ -1,56 +1,44 @@
 <template>
-  <div class="h-screen bg-[#e7e8f3] dark:bg-[rgb(14,13,34)] relative flex flex-col">
-    <!-- Mobile Header -->
+  <div class="h-screen bg-[#e7e8f3] dark:bg-[rgb(14,13,34)] relative flex flex-col overflow-hidden">
+    <!-- Mobile Header (only visible in playlist view) -->
     <MobileHeader
+      v-if="currentView === 'playlist'"
       :is-dark="isDark"
       :toggle-dark-mode="toggleDarkMode"
     />
 
-    <!-- Compact Mobile Player - Always Visible -->
-    <main class="px-4 pb-6 flex flex-col flex-1 min-h-0">
-      <!-- Mobile Player Component -->
-      <MobilePlayer
-        :is-playing="isPlaying"
-        :is-loading="isLoading"
-        :current-time="currentTime"
-        :duration="duration"
-        :is-first-verse="isFirstVerse"
-        :is-last-verse="isLastVerse"
-        :error="error"
-        :is-buffering="isBuffering"
-        :network-type="networkType"
-        :shuffle-play="shufflePlay"
-        :loop-play="loopPlay"
-        :correct-progress="correctProgress"
-        :play-from-hero="playFromHero"
-        :previous-verse="previousVerse"
-        :next-verse="nextVerse"
-        :seek-to-click="seekToClick"
-        :get-current-surah-name="getCurrentSurahName"
-        :get-current-surah-revelation-place="getCurrentSurahRevelationPlace"
-        :get-current-surah-total-duration="getCurrentSurahTotalDuration"
-        :format-time-with-hours="formatTimeWithHours"
-        @open-config="showPlayerConfig = true"
-      />
+    <!-- View Container with Transitions -->
+    <div class="flex-1 relative overflow-hidden">
+      <!-- Playlist View -->
+      <Transition
+        name="fade"
+        mode="out-in"
+      >
+        <div
+          v-if="currentView === 'playlist'"
+          key="playlist"
+          class="absolute inset-0"
+        >
+          <div class="h-full flex flex-col px-4 pb-6">
+            <MobilePlaylistView
+              @go-to-player="transitionToPlayer"
+              @open-settings="showPlayerConfig = true"
+            />
+          </div>
+        </div>
 
-      <!-- Tab Navigation -->
-      <TabNavigation
-        :active-tab="activeTab"
-        @update-tab="activeTab = $event"
-      />
-
-      <!-- Tab Content -->
-      <div v-if="activeTab === 'playing'" class="flex-1 flex flex-col min-h-0">
-        <!-- Surah Cards List -->
-        <SurahCardList />
-      </div>
-
-      <!-- Reciter Selection Tab Content -->
-      <ReciterList
-        v-else-if="activeTab === 'reciters'"
-      />
-
-    </main>
+        <!-- Player View -->
+        <div
+          v-else-if="currentView === 'player'"
+          key="player"
+          class="absolute inset-0"
+        >
+          <MobilePlayerView
+            @go-back="transitionToPlaylist"
+          />
+        </div>
+      </Transition>
+    </div>
 
     <!-- Player Configuration Modal -->
     <PlayerConfigModal
@@ -68,63 +56,69 @@
 
 <script setup lang="ts">
 // Import components
-import MobilePlayer from '~/components/player/MobilePlayer.vue'
 import PlayerConfigModal from '~/components/modals/PlayerConfigModal.vue'
 import MobileHeader from '~/components/headers/MobileHeader.vue'
-import TabNavigation from '~/components/ui/TabNavigation.vue'
-import SurahCardList from '~/components/ui/SurahCardList.vue'
-import ReciterList from '~/components/ui/ReciterList.vue'
+import MobilePlaylistView from '~/components/views/MobilePlaylistView.vue'
+import MobilePlayerView from '~/components/views/MobilePlayerView.vue'
 
-// Use integrated app composable instead of massive prop drilling
+// Use integrated app composable
 const {
+  // Audio state
+  isPlaying,
+
   // Theme
   isDark,
   toggleDarkMode,
-
-  // Audio player state
-  isPlaying,
-  isLoading,
-  currentTime,
-  duration,
-  currentSurah,
-  currentReciter,
-  isFirstVerse,
-  isLastVerse,
-  error,
-  isBuffering,
-  networkType,
 
   // Player configuration
   shufflePlay,
   loopPlay,
   autoPlayNext,
 
-  // Data
-  surahs,
-  availableReciters,
-  currentReciterId,
-
-  // Computed
-  correctProgress,
-
   // Methods
-  playFromHero,
-  previousVerse,
-  nextVerse,
-  seekToClick,
-  selectAndPlaySurahFromCard,
-  selectReciter,
   toggleShufflePlay,
   toggleLoopPlay,
-  toggleAutoPlayNext,
-  getCurrentSurahName,
-  getCurrentSurahRevelationPlace,
-  getCurrentSurahTotalDuration,
-  formatTimeWithHours,
-  formatDuration
+  toggleAutoPlayNext
 } = useAppIntegrated()
 
 // Local state for mobile layout
-const activeTab = ref('playing')
+const currentView = ref<'playlist' | 'player'>('playlist')
 const showPlayerConfig = ref(false)
+
+// View transition methods
+const transitionToPlayer = () => {
+  currentView.value = 'player'
+}
+
+const transitionToPlaylist = () => {
+  currentView.value = 'playlist'
+}
+
+// Auto-transition to player when audio starts playing
+watch(isPlaying, (newIsPlaying) => {
+  if (newIsPlaying && currentView.value === 'playlist') {
+    // Small delay to ensure smooth transition after audio starts
+    setTimeout(() => {
+      transitionToPlayer()
+    }, 300)
+  }
+})
 </script>
+
+<style scoped>
+/* Fade transition for view switching */
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.4s ease-in-out;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}
+
+.fade-enter-to,
+.fade-leave-from {
+  opacity: 1;
+}
+</style>

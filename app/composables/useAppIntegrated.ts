@@ -36,6 +36,13 @@ export const useAppIntegrated = () => {
     return surah.revelationType === 'Meccan' ? 'มักกิยะฮ์' : 'มะดะนียะฮ์'
   }
 
+  const getSurahRevelationPlace = (surahId: number) => {
+    const surah = getSurahById(surahId)
+    if (!surah) return 'มักกิยะฮ์'
+
+    return surah.revelationType === 'Meccan' ? 'มักกิยะฮ์' : 'มะดะนียะฮ์'
+  }
+
   const getCurrentSurahTotalDuration = () => {
     if (!audioPlayer.currentSurah.value) return '0:00'
 
@@ -88,7 +95,14 @@ export const useAppIntegrated = () => {
   }
 
   // Play from hero button - toggle play/pause or start new audio
-  const playFromHero = async () => {
+  const playFromHero = async (surahId?: number) => {
+    // If a specific surah ID is provided, select it first
+    if (surahId) {
+      setSelectedSurah(surahId)
+      await playSelectedAudio()
+      return
+    }
+
     // If audio is currently playing, just toggle pause
     if (audioPlayer.isPlaying.value) {
       await audioPlayer.togglePlay()
@@ -111,12 +125,15 @@ export const useAppIntegrated = () => {
     await playSelectedAudio()
   }
 
-  // Helper method to play selected audio with auto-play
+  // Helper method to play selected audio with auto-play and enhanced error recovery
   const playSelectedAudio = async () => {
     if (!selectedSurahValue.value) return
 
     try {
       console.log(`🎵 Attempting to load Surah ${selectedSurahValue.value} with reciter ${currentReciterId.value}`)
+
+      // Clear any previous error state before loading
+      audioPlayer.clearError()
 
       // Load the audio with current selected reciter
       await audioPlayer.loadAudio(selectedSurahValue.value, currentReciterId.value)
@@ -140,14 +157,23 @@ export const useAppIntegrated = () => {
     } catch (err) {
       console.error("❌ Failed to load and play audio:", err)
 
-      // Show user-friendly error message
+      // Set user-friendly Thai error messages
       if (err instanceof Error) {
-        if (err.message.includes('not available')) {
-          console.warn('⚠️ Audio file not found, this is expected in development without audio files')
-        } else if (err.message.includes('play')) {
-          console.warn('⚠️ Auto-play blocked by browser policy. User interaction required.')
+        if (err.message.includes('not available') || err.message.includes('404')) {
+          audioPlayer.error.value = 'ไม่พบไฟล์เสียงสำหรับซูเราะฮฺนี้ กรุณาลองซูเราะฮฺอื่น'
+        } else if (err.message.includes('play') || err.message.includes('autoplay')) {
+          audioPlayer.error.value = 'เบราว์เซอร์ป้องกันการเล่นอัตโนมัติ กรุณาแตะเพื่อเล่น'
+        } else if (err.message.includes('network') || err.message.includes('fetch')) {
+          audioPlayer.error.value = 'เชื่อมต่อเครือข่ายมีปัญหา กรุณาตรวจสอบการเชื่อมต่อ'
+        } else {
+          audioPlayer.error.value = 'เกิดข้อผิดพลาดในการโหลดเสียง กรุณาลองใหม่'
         }
+      } else {
+        audioPlayer.error.value = 'เกิดข้อผิดพลาดที่ไม่ทราบสาเหตุ กรุณาลองใหม่'
       }
+
+      // Error persists until manually cleared (as per requirement)
+      // No automatic clearing - user must click the X button to clear
     }
   }
 
@@ -254,10 +280,12 @@ export const useAppIntegrated = () => {
     selectAndPlaySurahFromCard,
     selectReciter,
     onDesktopReciterChange,
+    clearError: audioPlayer.clearError,
 
     // Computed getters
     getCurrentSurahName,
     getCurrentSurahRevelationPlace,
+    getSurahRevelationPlace,
     getCurrentSurahTotalDuration,
     correctProgress,
 

@@ -26,22 +26,57 @@
           <h2 class="text-white font-semibold text-lg mb-1 truncate">
             ซูเราะฮฺ{{ getCurrentSurahName().split('.')[1]?.trim() || 'อัล-ฟาติหะฮฺ' }}
           </h2>
-          <p class="text-white/70 text-sm truncate">
-            โดย {{ getCurrentReciterName }}
-          </p>
 
-          <!-- Status Indicator -->
-          <div v-if="error" class="mt-1">
-            <p class="text-red-300 text-xs">
-              เกิดข้อผิดพลาด - กรุณาลองใหม่
-            </p>
-          </div>
+          <!-- Animated Track Information Container -->
+          <div class="relative h-5 overflow-hidden">
+            <Transition
+              :name="currentStateInfo.direction"
+              :duration="{ enter: 300, leave: 200 }"
+              mode="out-in"
+            >
+              <!-- Normal Reciter Info -->
+              <p
+                v-if="currentStateInfo.state === 'normal'"
+                key="reciter-info"
+                class="text-white/70 text-sm truncate absolute top-0 left-0 right-0 h-full flex items-center"
+              >
+                โดย {{ getCurrentReciterName }}
+              </p>
 
-          <div v-else-if="isBuffering || isLoading" class="mt-1">
-            <p class="text-blue-300 text-xs">
-              กำลังโหลดเสียง...
-              <span v-if="networkType === 'cellular'" class="ml-1">(📱 เซลลูลาร์)</span>
-            </p>
+              <!-- Loading State -->
+              <div
+                v-else-if="currentStateInfo.state === 'loading'"
+                key="loading-info"
+                class="text-blue-300 text-xs absolute top-0 left-0 right-0 h-full flex items-center"
+              >
+                <div class="flex items-center space-x-2">
+                  <div class="w-3 h-3 animate-spin rounded-full border border-blue-300 border-t-transparent" />
+                  <span>
+                    กำลังโหลดเสียง...
+                    <span v-if="networkType === 'cellular'" class="ml-1">(📱 เซลลูลาร์)</span>
+                  </span>
+                </div>
+              </div>
+
+              <!-- Error State -->
+              <div
+                v-else-if="currentStateInfo.state === 'error'"
+                key="error-info"
+                class="text-red-300 text-xs absolute top-0 left-0 right-0 h-full flex items-center justify-between"
+              >
+                <div class="flex items-center space-x-2">
+                  <UIcon name="i-heroicons-exclamation-triangle" class="w-3 h-3" />
+                  <span>เกิดข้อผิดพลาด - กรุณาลองใหม่</span>
+                </div>
+                <button
+                  @click="clearError"
+                  class="ml-2 text-red-400 hover:text-red-200 transition-colors"
+                  :title="'ล้างข้อผิดพลาด'"
+                >
+                  <UIcon name="i-heroicons-x-mark" class="w-3 h-3" />
+                </button>
+              </div>
+            </Transition>
           </div>
         </div>
 
@@ -130,11 +165,75 @@ const {
   getCurrentSurahName,
   getCurrentSurahRevelationPlace,
   getCurrentSurahTotalDuration,
-  formatTimeWithHours
+  formatTimeWithHours,
+  clearError
 } = useAppIntegrated()
+
+// Computed property to determine current state and animation direction
+const currentStateInfo = computed(() => {
+  if (error.value) {
+    return { state: 'error', direction: 'slide-down' }
+  }
+  if (isBuffering.value || isLoading.value) {
+    return { state: 'loading', direction: 'slide-down' }
+  }
+  return { state: 'normal', direction: 'slide-up' }
+})
 
 // Events
 defineEmits<{
   openConfig: []
 }>()
 </script>
+
+<style scoped>
+/* Slide Down Animation - for loading and error states */
+.slide-down-enter-active {
+  transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.slide-down-leave-active {
+  transition: all 0.2s cubic-bezier(0.55, 0.06, 0.68, 0.19);
+}
+
+.slide-down-enter-from {
+  opacity: 0;
+  transform: translateY(-100%);
+}
+
+.slide-down-leave-to {
+  opacity: 0;
+  transform: translateY(-100%);
+}
+
+.slide-down-enter-to,
+.slide-down-leave-from {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Slide Up Animation - for normal reciter info */
+.slide-up-enter-active {
+  transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.slide-up-leave-active {
+  transition: all 0.2s cubic-bezier(0.55, 0.06, 0.68, 0.19);
+}
+
+.slide-up-enter-from {
+  opacity: 0;
+  transform: translateY(100%);
+}
+
+.slide-up-leave-to {
+  opacity: 0;
+  transform: translateY(100%);
+}
+
+.slide-up-enter-to,
+.slide-up-leave-from {
+  opacity: 1;
+  transform: translateY(0);
+}
+</style>

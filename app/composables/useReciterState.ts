@@ -25,7 +25,7 @@ export const useReciterState = () => {
       },
       {
         id: "002",
-        name: "อุมัร สุจิตวรรณศรี"
+        name: "Sa'ad Al-Ghamidi - อุมัร สุจิตวรรณศรี"
       }
     ]
   }))

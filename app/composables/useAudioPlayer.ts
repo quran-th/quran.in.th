@@ -367,6 +367,10 @@ export const useAudioPlayer = () => {
       console.error('[HowlerPlayer] Error loading audio:', error)
       error.value = 'Failed to load audio'
       isLoading.value = false
+
+      // Clear current states to allow retry
+      currentSurah.value = null
+      currentReciter.value = null
     }
   }
 
@@ -564,6 +568,28 @@ export const useAudioPlayer = () => {
     }
   }
 
+  // Play previous sequential surah
+  const playPreviousSurah = async () => {
+    if (!currentSurah.value || !currentReciter.value) return
+
+    const previousSurahId = currentSurah.value - 1
+
+    // If we've reached the beginning (Surah 1), go to Surah 114
+    const targetSurahId = previousSurahId < 1 ? 114 : previousSurahId
+
+    try {
+      await loadAudio(targetSurahId, currentReciter.value)
+      await play()
+      // Call metadata callback if set
+      if (onAutoPlayMetadataUpdate) {
+        onAutoPlayMetadataUpdate(targetSurahId, currentReciter.value)
+      }
+    } catch (error) {
+      console.error('[HowlerPlayer] Error loading previous surah:', error)
+      error.value = 'Failed to load previous surah'
+    }
+  }
+
   // Callback for external metadata updates during auto-play (preserved from original)
   let onAutoPlayMetadataUpdate: ((surahId: number, reciterId: number) => void) | null = null
 
@@ -601,6 +627,12 @@ export const useAudioPlayer = () => {
   watch(showTranslation, (newValue) => {
     localStorage.updateShowTranslation(newValue)
   })
+
+  // Clear error state and enable retry
+  const clearError = () => {
+    error.value = null
+    isLoading.value = false
+  }
 
   // Cleanup
   const cleanup = () => {
@@ -676,9 +708,11 @@ export const useAudioPlayer = () => {
     setPlaybackRate,
     formatTime,
     cleanup,
+    clearError,
     updateMediaSessionMetadata,
     updateMediaMetadata: updateMediaSessionMetadata, // Alias for backward compatibility
     playNextSurah,
+    playPreviousSurah,
     playRandomSurah,
     setAutoPlayMetadataCallback,
 
