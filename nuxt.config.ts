@@ -47,7 +47,7 @@ export default defineNuxtConfig({
     '/': {
       prerender: true,
       headers: {
-        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Cache-Control': 'no-cache, no-store, must-revalidate, s-maxage=0',
         'Pragma': 'no-cache',
         'Expires': '0'
       }
@@ -55,7 +55,7 @@ export default defineNuxtConfig({
     // Service worker - prevent caching for updates
     '/sw.js': {
       headers: {
-        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Cache-Control': 'no-cache, no-store, must-revalidate, s-maxage=0',
         'Pragma': 'no-cache',
         'Expires': '0'
       }
@@ -80,6 +80,11 @@ export default defineNuxtConfig({
 
     // Static asset cache control headers
     routeRules: {
+      '/': {
+        headers: {
+          'Cache-Control': 'no-cache, must-revalidate, s-maxage=0'
+        }
+      },
       // Build metadata files - short cache for quick invalidation
       '/_nuxt/builds/**': {
         headers: {

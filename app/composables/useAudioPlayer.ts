@@ -277,9 +277,9 @@ export const useAudioPlayer = () => {
 
           console.log('[HowlerPlayer] Audio loaded successfully, duration:', duration.value)
         },
-        onloaderror: (id, error) => {
-          console.error('[HowlerPlayer] Load error:', error)
-          error.value = 'Failed to load audio file'
+        onloaderror: (id, loadError) => {
+          console.error('[HowlerPlayer] Load error:', loadError)
+          error.value = 'ไม่พบไฟล์เสียงสำหรับซูเราะฮฺนี้ กรุณาลองซูเราะฮฺอื่น'
           isLoading.value = false
         },
         onplay: () => {
@@ -316,9 +316,9 @@ export const useAudioPlayer = () => {
           isPlaying.value = false
           console.log('[HowlerPlayer] Playback stopped')
         },
-        onplayerror: (id, error) => {
-          console.error('[HowlerPlayer] Play error:', error)
-          error.value = 'Playback failed'
+        onplayerror: (id, playError) => {
+          console.error('[HowlerPlayer] Play error:', playError)
+          error.value = 'เกิดข้อผิดพลาดในการเล่นเสียง กรุณาลองใหม่'
           isPlaying.value = false
 
           // Handle unlock requirement on mobile
@@ -365,7 +365,7 @@ export const useAudioPlayer = () => {
 
     } catch (error) {
       console.error('[HowlerPlayer] Error loading audio:', error)
-      error.value = 'Failed to load audio'
+      error.value = 'เกิดข้อผิดพลาดในการโหลดเสียง กรุณาลองใหม่'
       isLoading.value = false
 
       // Clear current states to allow retry
@@ -398,7 +398,7 @@ export const useAudioPlayer = () => {
 
     } catch (error) {
       console.error('[HowlerPlayer] Error playing audio:', error)
-      error.value = 'Failed to play audio'
+      error.value = 'เกิดข้อผิดพลาดในการเล่นเสียง กรุณาลองใหม่'
       isBuffering.value = false
     }
   }

@@ -44,16 +44,28 @@
         </div>
       </div>
 
-      <!-- Error Message (if any) -->
+      <!-- Enhanced Error Message (if any) -->
       <div
         v-if="error"
-        class="mb-4 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl"
+        class="mb-4 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl"
       >
-        <div class="flex items-center">
-          <UIcon name="i-heroicons-exclamation-triangle" class="w-5 h-5 text-red-500 dark:text-red-400 mr-2 flex-shrink-0" />
-          <p class="text-sm text-red-700 dark:text-red-300">{{ error }}</p>
+        <div class="flex items-start">
+          <UIcon name="i-heroicons-exclamation-triangle" class="w-5 h-5 text-red-500 dark:text-red-400 mr-3 flex-shrink-0 mt-0.5" />
+          <div class="flex-1 min-w-0">
+            <p class="text-sm text-red-700 dark:text-red-300 mb-2">{{ error }}</p>
+            <div class="flex items-center gap-3">
+              <button
+                class="text-xs text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-200 underline"
+                @click="retryLastSurah"
+              >
+                ลองใหม่
+              </button>
+              <span class="text-xs text-red-500 dark:text-red-400">•</span>
+              <span class="text-xs text-red-500 dark:text-red-400">หรือลองเลือกซูเราะฮฺอื่น</span>
+            </div>
+          </div>
           <button
-            class="ml-auto text-red-500 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300"
+            class="ml-3 text-red-500 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 flex-shrink-0"
             @click="clearError"
           >
             <UIcon name="i-heroicons-x-mark" class="w-4 h-4" />
@@ -75,6 +87,7 @@
               v-for="surah in surahs"
               :key="surah.id"
               class="relative rounded-2xl overflow-hidden cursor-pointer transition-all duration-200 hover:scale-[1.02] active:scale-[0.98]"
+              :class="{ 'opacity-70 pointer-events-none': loadingSurahId === surah.id }"
               @click="playSurahAndTransition(surah.id)"
             >
               <!-- Background Card -->
@@ -102,9 +115,17 @@
                   <!-- Play Button -->
                   <button
                     class="w-12 h-12 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center hover:bg-white/30 transition-all hover:scale-105 active:scale-95 ml-3"
+                    :disabled="loadingSurahId === surah.id"
                     @click.stop="playFromHero(surah.id)"
                   >
+                    <!-- Loading spinner for this specific surah -->
+                    <div
+                      v-if="loadingSurahId === surah.id"
+                      class="w-5 h-5 animate-spin rounded-full border-2 border-white border-t-transparent"
+                    />
+                    <!-- Play/Pause icon -->
                     <UIcon
+                      v-else
                       :name="currentSurah === surah.id && isPlaying ? 'i-heroicons-pause' : 'i-heroicons-play'"
                       class="w-6 h-6 text-white"
                       :class="{ 'ml-0.5': !(currentSurah === surah.id && isPlaying) }"
@@ -154,9 +175,14 @@ const {
   playFromHero,
   clearError,
   getCurrentSurahName,
-  getSurahRevelationPlace,
   formatDuration
 } = useAppIntegrated()
+
+// Local loading state for individual surah cards
+const loadingSurahId = ref<number | null>(null)
+
+// Track last attempted surah for retry functionality
+const lastAttemptedSurahId = ref<number | null>(null)
 
 // Events
 const emit = defineEmits<{
@@ -167,23 +193,53 @@ const emit = defineEmits<{
 // Methods
 const playSurahAndTransition = async (surahId: number) => {
   try {
+    // Track the attempted surah for retry functionality
+    lastAttemptedSurahId.value = surahId
+
+    // Set loading state for this specific surah card
+    loadingSurahId.value = surahId
+
     // Clear any previous errors before attempting to play
     clearError()
 
     // Play the surah
     await playFromHero(surahId)
 
-    // Emit event to transition to player view
+    // Wait for audio to actually start loading
     await nextTick()
 
-    // Only transition if audio is actually playing (not just loading)
+    // Wait a bit to ensure loading state is processed
+    await new Promise(resolve => setTimeout(resolve, 100))
+
+    // Check if audio is playing or if there's an error
     if (isPlaying.value) {
+      // Success - transition to player view
       emit('goToPlayer')
+    } else if (error.value) {
+      // Error occurred - error banner will show automatically
+      console.log('🔄 Audio failed to load, staying on playlist for user retry')
+    } else {
+      // Still loading or paused - don't transition yet
+      console.log('🔄 Audio still processing, staying on playlist')
     }
-  } catch (error) {
-    console.error('❌ Failed to play surah:', error)
-    // Error handling is done in the audio player composable
-    // UI will remain on playlist view for user to try again
+  } catch (err) {
+    console.error('❌ Failed to play surah:', err)
+
+    // If no error was set by the audio player, set a generic one
+    if (!error.value) {
+      // Force error to show in UI by setting it manually
+      error.value = 'เกิดข้อผิดพลาดในการโหลดเสียง กรุณาลองใหม่'
+    }
+  } finally {
+    // Always clear loading state
+    loadingSurahId.value = null
+  }
+}
+
+// Retry the last attempted surah
+const retryLastSurah = async () => {
+  if (lastAttemptedSurahId.value) {
+    await playSurahAndTransition(lastAttemptedSurahId.value)
   }
 }
 </script>
