@@ -21,7 +21,7 @@
           <div class="flex gap-4">
             <button
               class="px-6 py-2 bg-black text-white rounded-full font-medium hover:bg-black/90 transition-colors flex items-center gap-2 cursor-pointer"
-              :disabled="isLoading" :class="{ 'bg-red-600 hover:bg-red-700': error }" @click="playFromHero">
+              :disabled="isLoading" :class="{ 'bg-red-600 hover:bg-red-700': error }" @click="() => playFromHero()">
               <UIcon v-if="!isLoading && !error" :name="isPlaying ? 'i-heroicons-pause' : 'i-heroicons-play'"
                 class="w-5 h-5" :class="{ 'ml-0.5': !isPlaying }" />
               <UIcon v-else-if="error" name="i-heroicons-exclamation-triangle" class="w-5 h-5" />

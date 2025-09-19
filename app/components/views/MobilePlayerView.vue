@@ -12,7 +12,7 @@
         <!-- Album Art Section -->
         <div class="text-center mb-8">
           <!-- Large Album Art -->
-          <div class="w-60 h-60 max-[400px]:w-48 max-[400px]:h-48 mx-auto mb-6 relative">
+          <div class="w-50 h-50 max-[400px]:w-40 max-[400px]:h-40 mx-auto mb-6 relative">
             <!-- Album artwork with cover image -->
             <div class="w-full h-full relative rounded-3xl shadow-2xl overflow-hidden">
               <!-- Background cover image -->
@@ -36,9 +36,6 @@
             <h1 class="text-slate-900 dark:text-slate-100 text-2xl font-bold mb-2 leading-tight">
               {{ getSurahDisplayName() }}
             </h1>
-            <p class="text-slate-600 dark:text-slate-300 text-md">
-              {{ currentReciterName }}
-            </p>
             <!-- Animated Surah Information Container -->
             <div class="relative h-5 overflow-hidden mt-2">
               <Transition
@@ -46,17 +43,34 @@
                 :duration="{ enter: 300, leave: 200 }"
                 mode="out-in"
               >
-                <!-- Normal Surah Info -->
+                <!-- Normal State: Rotating between Surah Info and Reciter Name -->
                 <div
                   v-if="currentStateInfo.state === 'normal'"
-                  key="surah-info"
+                  :key="`normal-${currentStateInfo.displayMode}`"
                   class="flex items-center justify-center text-slate-500 dark:text-slate-400 text-sm absolute top-0 left-0 right-0 h-full"
                 >
-                  <span v-if="currentSurah">ซูเราะฮ์ที่ {{ currentSurah }}</span>
-                  <span class="mx-2">•</span>
-                  <span>{{ getCurrentSurahRevelationPlace() || 'มักกะฮฺ' }}</span>
-                  <span class="mx-2">•</span>
-                  <span>{{ getCurrentSurahTotalDuration() || formatTimeWithHours(duration) || '0:00' }}</span>
+                  <!-- Surah Information Display -->
+                  <div v-if="currentStateInfo.displayMode === 'surah-info'" class="flex items-center">
+                    <span v-if="currentSurah">ซูเราะฮ์ที่ {{ currentSurah }}</span>
+                    <span class="mx-2">•</span>
+                    <span>{{ getCurrentSurahRevelationPlace() || 'มักกะฮฺ' }}</span>
+                    <span class="mx-2">•</span>
+                    <span>{{ getCurrentSurahTotalDuration() || formatTimeWithHours(duration) || '0:00' }}</span>
+                  </div>
+
+                  <!-- Reciter Name Display -->
+                  <div v-else-if="currentStateInfo.displayMode === 'reciter-name'" class="flex items-center">
+                    <span class="text-slate-600 dark:text-slate-300 font-medium">
+                      อ่านโดย Sa'ad Al-Ghamidi
+                    </span>
+                  </div>
+
+                  <!-- Reciter Name (TH) Display -->
+                  <div v-else-if="currentStateInfo.displayMode === 'reciter-name-th'" class="flex items-center">
+                    <span class="text-slate-600 dark:text-slate-300 font-medium">
+                      เสียงภาษาไทยโดย {{ currentReciterName }}
+                    </span>
+                  </div>
                 </div>
 
                 <!-- Loading State -->
@@ -139,7 +153,7 @@
               class="w-20 h-20 rounded-full bg-slate-800 dark:bg-slate-200 flex items-center justify-center text-white dark:text-slate-800 shadow-2xl transition-all hover:scale-105 active:scale-95"
               :disabled="isLoading"
               :class="{ 'bg-red-500 text-white': error }"
-              @click="playFromHero"
+              @click="() => playFromHero()"
             >
               <UIcon
                 v-if="!isLoading && !error"
@@ -299,6 +313,37 @@ const {
   clearError
 } = useAppIntegrated()
 
+// Rotating display state management
+const rotatingDisplayMode = ref<'surah-info' | 'reciter-name' | 'reciter-name-th'>('surah-info')
+const rotationTimer = ref<NodeJS.Timeout | null>(null)
+
+// Start rotation timer for normal state
+const startRotation = () => {
+  if (rotationTimer.value) {
+    clearInterval(rotationTimer.value)
+  }
+
+  rotationTimer.value = setInterval(() => {
+    if (rotatingDisplayMode.value === 'surah-info') {
+      rotatingDisplayMode.value = 'reciter-name'
+    } else if (rotatingDisplayMode.value === 'reciter-name') {
+      rotatingDisplayMode.value = 'reciter-name-th'
+    } else {
+      rotatingDisplayMode.value = 'surah-info'
+    }
+  }, 10000) // Switch every 10 seconds
+}
+
+// Stop rotation timer
+const stopRotation = () => {
+  if (rotationTimer.value) {
+    clearInterval(rotationTimer.value)
+    rotationTimer.value = null
+  }
+  // Reset to surah info when stopping
+  rotatingDisplayMode.value = 'surah-info'
+}
+
 // Computed property to determine current state and animation direction
 const currentStateInfo = computed(() => {
   if (error.value) {
@@ -307,11 +352,35 @@ const currentStateInfo = computed(() => {
   if (isBuffering.value || isLoading.value) {
     return { state: 'loading', direction: 'slide-down' }
   }
-  return { state: 'normal', direction: 'slide-up' }
+  return { state: 'normal', direction: 'slide-up', displayMode: rotatingDisplayMode.value }
 })
 
 // Local state
 const openPlayerConfig = ref(false)
+
+// Watch for state changes to manage rotation
+watch(currentStateInfo, (newState, oldState) => {
+  if (newState.state === 'normal' && oldState?.state !== 'normal') {
+    // Start rotation when entering normal state
+    startRotation()
+  } else if (newState.state !== 'normal' && oldState?.state === 'normal') {
+    // Stop rotation when leaving normal state
+    stopRotation()
+  }
+}, { immediate: true })
+
+// Lifecycle management
+onMounted(() => {
+  // Start rotation if we're already in normal state
+  if (currentStateInfo.value.state === 'normal') {
+    startRotation()
+  }
+})
+
+onUnmounted(() => {
+  // Clean up timer
+  stopRotation()
+})
 
 // Events
 defineEmits<{
@@ -380,4 +449,5 @@ const getSurahDisplayName = () => {
   opacity: 1;
   transform: translateY(0);
 }
+
 </style>

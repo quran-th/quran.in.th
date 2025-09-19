@@ -5,7 +5,7 @@
       <div class="space-y-3 h-full overflow-y-auto">
         <div v-for="surah in surahs" :key="surah.id"
           class="relative rounded-2xl overflow-hidden cursor-pointer transition-transform active:scale-98"
-          @click="selectAndPlaySurahFromCard(surah.id)">
+          @click="() => selectAndPlaySurahFromCard(surah.id)">
           <!-- Background inspired by hero section -->
           <div class="bg-gradient-to-r from-[rgb(191,179,147)] to-[rgb(171,159,127)] dark:from-[rgb(35,32,48)] dark:to-[rgb(25,22,38)] p-4">
             <!-- Content -->
@@ -31,7 +31,7 @@
               <!-- Play button -->
               <button
                 class="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center hover:bg-white/30 transition-colors"
-                @click.stop="selectAndPlaySurahFromCard(surah.id)">
+                @click.stop="() => selectAndPlaySurahFromCard(surah.id)">
                 <UIcon :name="currentSurah === surah.id && isPlaying ? 'i-heroicons-pause' : 'i-heroicons-play'"
                   class="w-5 h-5 text-white" :class="{ 'ml-0.5': !(currentSurah === surah.id && isPlaying) }" />
               </button>

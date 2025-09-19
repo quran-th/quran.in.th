@@ -47,17 +47,8 @@ export default defineNuxtConfig({
     '/': {
       prerender: true,
       headers: {
-        'Cache-Control': 'no-cache, no-store, must-revalidate, s-maxage=0',
-        'Pragma': 'no-cache',
-        'Expires': '0'
-      }
-    },
-    // Service worker - prevent caching for updates
-    '/sw.js': {
-      headers: {
-        'Cache-Control': 'no-cache, no-store, must-revalidate, s-maxage=0',
-        'Pragma': 'no-cache',
-        'Expires': '0'
+        'Cache-Control': 'no-cache, must-revalidate, s-maxage=0',
+        'ETag': true // Enable conditional requests for efficiency
       }
     },
     // Manifest - prevent caching for PWA updates
@@ -78,34 +69,41 @@ export default defineNuxtConfig({
       nodeCompat: true
     },
 
-    // Static asset cache control headers
+    // Consolidated static asset cache control headers
     routeRules: {
-      '/': {
-        headers: {
-          'Cache-Control': 'no-cache, must-revalidate, s-maxage=0'
-        }
-      },
       // Build metadata files - short cache for quick invalidation
       '/_nuxt/builds/**': {
         headers: {
           'Cache-Control': 'public, max-age=300, must-revalidate' // 5 minutes
         }
       },
-      // Other Nuxt assets - longer cache with revalidation
+      // Nuxt hashed assets - immutable and long-lived
       '/_nuxt/**': {
         headers: {
-          'Cache-Control': 'public, max-age=31536000, immutable' // 1 year for hashed assets
+          'Cache-Control': 'public, max-age=31536000, immutable', // 1 year for hashed assets
+          'Vary': 'Accept-Encoding' // Support compression variations
         }
       },
-      // Static assets
+      // Static assets with immutable content
       '/fonts/**': {
         headers: {
-          'Cache-Control': 'public, max-age=31536000, immutable'
+          'Cache-Control': 'public, max-age=31536000, immutable',
+          'Cross-Origin-Embedder-Policy': 'cross-origin'
         }
       },
+      // Audio files - optimized for HTTP streaming
       '/audio/**': {
         headers: {
-          'Cache-Control': 'public, max-age=86400' // 1 day for audio files
+          'Cache-Control': 'public, max-age=604800, must-revalidate', // 1 week with revalidation
+          'Accept-Ranges': 'bytes', // Enable range requests for seeking
+          'Cross-Origin-Resource-Policy': 'cross-origin'
+        }
+      },
+      // Static images and media
+      '/**/*.{png,jpg,jpeg,webp,gif,svg,ico}': {
+        headers: {
+          'Cache-Control': 'public, max-age=2592000', // 30 days
+          'Vary': 'Accept'
         }
       }
     }

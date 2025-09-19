@@ -33,7 +33,7 @@
                 ? 'bg-indigo-50 dark:bg-indigo-900/20 border-indigo-200 dark:border-indigo-800'
                 : 'bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700'
             ]"
-            @click="selectReciter(reciter.reciter_id)"
+            @click="() => selectReciter(reciter.reciter_id)"
           >
             <div class="flex items-center justify-between">
               <div>

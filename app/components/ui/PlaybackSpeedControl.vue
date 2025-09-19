@@ -38,7 +38,7 @@
                   ? 'bg-[rgb(191,179,147)] dark:bg-[rgb(245,162,116)] text-white dark:text-slate-800 shadow-lg'
                   : 'bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600'
               ]"
-              @click="selectSpeed(speed)"
+              @click="() => selectSpeed(speed)"
             >
               {{ speed }}×
             </button>

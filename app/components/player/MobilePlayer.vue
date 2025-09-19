@@ -14,7 +14,7 @@
         <!-- Play Button -->
         <button
           class="w-14 h-14 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center text-white shadow-lg transition-all hover:bg-white/30 active:scale-95"
-          :disabled="isLoading" :class="{ 'bg-red-500/80': error }" @click="playFromHero">
+          :disabled="isLoading" :class="{ 'bg-red-500/80': error }" @click="() => playFromHero()">
           <UIcon v-if="!isLoading && !error" :name="isPlaying ? 'i-heroicons-pause' : 'i-heroicons-play'"
             class="w-6 h-6" :class="{ 'ml-1': !isPlaying }" />
           <UIcon v-else-if="error" name="i-heroicons-exclamation-triangle" class="w-6 h-6" />

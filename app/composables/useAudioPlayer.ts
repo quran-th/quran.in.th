@@ -1,5 +1,5 @@
 import { Howl } from 'howler'
-import type { AudioPlayerState, VerseTiming } from '~/types/quran'
+import type { VerseTiming, AudioFile, Surah } from '~/types/quran'
 import { useLocalStorage } from './useLocalStorage'
 
 export const useAudioPlayer = () => {
@@ -18,7 +18,7 @@ export const useAudioPlayer = () => {
   const currentReciter = useState<number | null>('player-currentReciter', () => initialState.currentReciter)
   const currentVerse = useState<number>('player-currentVerse', () => 1)
   const audioElement = useState<HTMLAudioElement | null>('player-audioElement', () => null)
-  const audioFile = useState<any | null>('player-audioFile', () => null)
+  const audioFile = useState<AudioFile | null>('player-audioFile', () => null)
   const error = useState<string | null>('player-error', () => null)
 
   // Additional reactive state
@@ -189,7 +189,7 @@ export const useAudioPlayer = () => {
       // Get metadata from the surahs API endpoint
       const response = await $fetch<{
         reciterId: string,
-        surahs: any[],
+        surahs: Surah[],
         total: number
       }>(`/api/surahs/${reciterId}`)
 
@@ -246,6 +246,8 @@ export const useAudioPlayer = () => {
 
       // Detect network type for optimization
       networkType.value = detectNetworkType()
+
+      // Note: Audio prefetching removed with Service Worker cleanup
 
       // Create new Howl instance optimized for large file streaming
       const howl = new Howl({

@@ -1,6 +1,6 @@
 <template>
   <!-- Large Player Mode -->
-  <div class="flex items-center justify-center min-h-[calc(100vh-200px)] animate-fade-in">
+  <div class="flex items-center justify-center min-h-[calc(100dvh-200px)] animate-fade-in">
     <div class="w-full max-w-2xl mx-auto">
       <!-- Large Album Art Section -->
       <div class="text-center mb-8">
@@ -66,7 +66,7 @@
           <!-- Play/Pause -->
           <button
             class="w-20 h-20 rounded-full bg-gradient-to-br from-[rgb(191,179,147)] to-[rgb(171,159,127)] dark:from-[rgb(191,179,147)] dark:to-[rgb(171,159,127)] hover:from-[rgb(201,189,157)] hover:to-[rgb(181,169,137)] dark:hover:from-[rgb(201,189,157)] dark:hover:to-[rgb(181,169,137)] flex items-center justify-center text-white transition-all active:scale-95 shadow-xl"
-            :disabled="!currentSurah || !currentReciter" @click="togglePlay()">
+            :disabled="!currentSurah || !currentReciter" @click="togglePlay">
             <UIcon v-if="!isLoading && !error" :name="isPlaying ? 'i-heroicons-pause' : 'i-heroicons-play'"
               class="w-8 h-8 text-white" :class="{ 'ml-1': !isPlaying }" />
             <UIcon v-else-if="error" name="i-heroicons-exclamation-triangle" class="w-8 h-8 text-white" />

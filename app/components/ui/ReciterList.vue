@@ -10,7 +10,7 @@
       <div class="space-y-3 h-full overflow-y-auto">
         <div v-for="reciter in availableReciters" :key="reciter.id"
           class="relative rounded-2xl overflow-hidden cursor-pointer transition-transform active:scale-98"
-          @click="selectReciter(reciter.id)">
+          @click="() => selectReciter(reciter.id)">
           <!-- Background Card -->
           <div class="bg-gradient-to-r from-[rgb(191,179,147)] to-[rgb(171,159,127)] dark:from-[rgb(35,32,48)] dark:to-[rgb(25,22,38)] p-6">
             <!-- Content -->

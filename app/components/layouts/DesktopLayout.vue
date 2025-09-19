@@ -52,7 +52,7 @@
               <div class="max-h-96 overflow-y-auto">
                 <div v-for="(surah, index) in surahs" :key="surah.id"
                   class="px-6 py-4 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors cursor-pointer border-b border-slate-100 dark:border-slate-700 last:border-b-0"
-                  @click="selectAndPlaySurah(surah.id)">
+                  @click="() => selectAndPlaySurah(surah.id)">
                   <div class="grid grid-cols-12 gap-4 items-center">
                     <!-- Number -->
                     <div class="col-span-1">

@@ -21,7 +21,7 @@
               ? 'transform scale-105'
               : 'opacity-80 hover:opacity-95'
           ]"
-          @click="selectReciterAndScroll(reciter.id, index)"
+          @click="() => selectReciterAndScroll(reciter.id, index)"
         >
           <!-- Reciter Card -->
           <div
@@ -94,7 +94,7 @@
               ? 'w-6 h-2 bg-[rgb(191,179,147)] dark:bg-[rgb(245,162,116)] rounded-full'
               : 'w-2 h-2 bg-slate-300 dark:bg-slate-600 rounded-full hover:bg-slate-400 dark:hover:bg-slate-500'
           ]"
-          @click="selectReciterAndScroll(reciter.id, index)"
+          @click="() => selectReciterAndScroll(reciter.id, index)"
         />
       </div>
     </div>

@@ -7,7 +7,7 @@
     </div> -->
 
     <!-- Scrollable Content -->
-    <div class="flex-1 flex flex-col min-h-0 px-4">
+    <div class="flex-1 flex flex-col min-h-0 px-2">
       <!-- Reciter Carousel -->
       <ReciterCarousel />
 
@@ -88,7 +88,7 @@
               :key="surah.id"
               class="relative rounded-2xl overflow-hidden cursor-pointer transition-all duration-200 hover:scale-[1.02] active:scale-[0.98]"
               :class="{ 'opacity-70 pointer-events-none': loadingSurahId === surah.id }"
-              @click="playSurahAndTransition(surah.id)"
+              @click="() => playSurahAndTransition(surah.id)"
             >
               <!-- Background Card -->
               <div class="bg-gradient-to-r from-[rgb(191,179,147)] to-[rgb(171,159,127)] dark:from-[rgb(35,32,48)] dark:to-[rgb(25,22,38)] p-4">
@@ -116,7 +116,7 @@
                   <button
                     class="w-12 h-12 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center hover:bg-white/30 transition-all hover:scale-105 active:scale-95 ml-3"
                     :disabled="loadingSurahId === surah.id"
-                    @click.stop="playFromHero(surah.id)"
+                    @click.stop="() => playFromHero(surah.id)"
                   >
                     <!-- Loading spinner for this specific surah -->
                     <div
