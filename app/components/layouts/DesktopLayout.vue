@@ -88,7 +88,7 @@
                     <!-- Reciter info -->
                     <div class="col-span-4">
                       <p class="text-slate-500 dark:text-slate-400 text-xs">
-                        เสียงแปลโดย {{ getCurrentReciterName }}
+                        เสียงภาษาไทยโดย {{ getCurrentReciterName }}
                       </p>
                     </div>
                   </div>

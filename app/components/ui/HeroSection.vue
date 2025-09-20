@@ -33,7 +33,7 @@
         </div>
 
         <div class="text-right">
-          <p class="text-white/60 text-sm mb-1">เสียงแปลโดย {{ getCurrentReciterName }}</p>
+          <p class="text-white/60 text-sm mb-1">เสียงภาษาไทยโดย {{ getCurrentReciterName }}</p>
         </div>
       </div>
     </div>

@@ -165,7 +165,7 @@ export const useAppIntegrated = () => {
       if (surah) {
         const surahDisplayName = `ซูเราะฮฺ ${surah.thaiName}`
         const reciterName = currentReciterName.value
-        audioPlayer.updateMediaSessionMetadata(surahDisplayName, `เสียงแปลโดย ${reciterName}`)
+        audioPlayer.updateMediaSessionMetadata(surahDisplayName, `เสียงภาษาไทยโดย ${reciterName}`)
         console.log(`🎵 Now playing: ${surahDisplayName} by ${reciterName}`)
       }
     } catch (err) {
@@ -246,7 +246,7 @@ export const useAppIntegrated = () => {
         if (surah) {
           const surahDisplayName = `ซูเราะฮฺ ${surah.thaiName}`
           const reciterName = currentReciterName.value
-          audioPlayer.updateMediaSessionMetadata(surahDisplayName, `เสียงแปลโดย ${reciterName}`)
+          audioPlayer.updateMediaSessionMetadata(surahDisplayName, `เสียงภาษาไทยโดย ${reciterName}`)
         }
 
         console.log(`✅ Random surah ${randomSurahId} loaded and ready for playback`)
@@ -272,7 +272,7 @@ export const useAppIntegrated = () => {
       if (surah) {
         const surahDisplayName = `ซูเราะฮฺ ${surah.thaiName}`
         const reciterName = currentReciterName.value
-        audioPlayer.updateMediaSessionMetadata(surahDisplayName, `เสียงแปลโดย ${reciterName}`)
+        audioPlayer.updateMediaSessionMetadata(surahDisplayName, `เสียงภาษาไทยโดย ${reciterName}`)
       }
 
       console.log(`✅ Session restored: Surah ${audioPlayer.currentSurah.value} ready for playback`)
@@ -283,6 +283,22 @@ export const useAppIntegrated = () => {
       return false
     }
   }
+
+  // Set up auto-play metadata callback for background MediaSession updates
+  audioPlayer.setAutoPlayMetadataCallback((surahId: number, reciterId: number) => {
+    const surah = getSurahById(surahId)
+    if (surah) {
+      const surahDisplayName = `ซูเราะฮฺ ${surah.thaiName}`
+      const reciterName = currentReciterName.value
+      audioPlayer.updateMediaSessionMetadata(surahDisplayName, `เสียงภาษาไทยโดย ${reciterName}`)
+      console.log(`🎵 Background metadata updated: ${surahDisplayName} by ${reciterName}`)
+
+      // Also update UI state to keep everything in sync
+      if (selectedSurahValue.value !== surahId) {
+        setSelectedSurah(surahId)
+      }
+    }
+  })
 
   return {
     ...audioPlayer,

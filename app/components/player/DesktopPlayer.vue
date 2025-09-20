@@ -28,7 +28,7 @@
             {{ getCurrentSurahName().split('.')[1]?.trim() || 'อัล-ฟาติหะฮฺ' }}
           </h2>
           <div class="flex items-center justify-center gap-2">
-            <span class="text-lg text-slate-600 dark:text-slate-400">เสียงแปลโดย</span>
+            <span class="text-lg text-slate-600 dark:text-slate-400">เสียงภาษาไทยโดย</span>
             <!-- Reciter Selector in Player Mode -->
             <div class="relative">
               <select

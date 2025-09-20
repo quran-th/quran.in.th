@@ -675,6 +675,10 @@ export const useAudioPlayer = () => {
     try {
       await loadAudio(randomSurahId, currentReciter.value)
       await play()
+
+      // Direct MediaSession metadata update (fallback)
+      updateMediaSessionForCurrentTrack()
+
       // Call metadata callback if set
       if (onAutoPlayMetadataUpdate) {
         onAutoPlayMetadataUpdate(randomSurahId, currentReciter.value)
@@ -709,6 +713,10 @@ export const useAudioPlayer = () => {
     try {
       await loadAudio(targetSurahId, currentReciter.value)
       await play()
+
+      // Direct MediaSession metadata update (fallback)
+      updateMediaSessionForCurrentTrack()
+
       // Call metadata callback if set
       if (onAutoPlayMetadataUpdate) {
         onAutoPlayMetadataUpdate(targetSurahId, currentReciter.value)
@@ -731,6 +739,10 @@ export const useAudioPlayer = () => {
     try {
       await loadAudio(targetSurahId, currentReciter.value)
       await play()
+
+      // Direct MediaSession metadata update (fallback)
+      updateMediaSessionForCurrentTrack()
+
       // Call metadata callback if set
       if (onAutoPlayMetadataUpdate) {
         onAutoPlayMetadataUpdate(targetSurahId, currentReciter.value)
@@ -747,6 +759,31 @@ export const useAudioPlayer = () => {
   // Set callback for metadata updates
   const setAutoPlayMetadataCallback = (callback: (surahId: number, reciterId: number) => void) => {
     onAutoPlayMetadataUpdate = callback
+  }
+
+  // Update MediaSession metadata for current track (fallback method)
+  const updateMediaSessionForCurrentTrack = () => {
+    if (!import.meta.client || !('mediaSession' in navigator)) return
+    if (!currentSurah.value || !currentReciter.value) return
+
+    // Simple metadata update with basic info
+    const surahName = `ซูเราะฮ์ ${currentSurah.value}`
+    const reciterName = `ภาษาไทยโดย ${currentReciter.value}`
+
+    navigator.mediaSession.metadata = new MediaMetadata({
+      title: surahName,
+      artist: reciterName,
+      album: 'อัลกุรอานพร้อมความหมายภาษาไทย',
+      artwork: [
+        {
+          src: '/cover.jpg',
+          sizes: '512x512',
+          type: 'image/jpeg'
+        }
+      ]
+    })
+
+    console.log(`[MediaSession] Updated metadata: ${surahName} by ${reciterName}`)
   }
 
   // Format time helper

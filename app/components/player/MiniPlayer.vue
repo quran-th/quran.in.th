@@ -10,7 +10,7 @@
         </div>
         <div>
           <p class="font-medium">{{ getCurrentSurahName().split('.')[1]?.trim() || 'อัล-ฟาติหะฮฺ' }}</p>
-          <p class="text-white/60 text-sm">เสียงแปลโดย {{ getCurrentReciterName }}</p>
+          <p class="text-white/60 text-sm">เสียงภาษาไทยโดย {{ getCurrentReciterName }}</p>
         </div>
       </div>
 
