@@ -93,36 +93,142 @@ export const useAudioPlayer = () => {
   const isFirstVerse = computed(() => currentTime.value <= 10)
   const isLastVerse = computed(() => currentTime.value >= (duration.value - 10))
 
-  // Initialize MediaSession API for native OS controls
+  // Platform detection for MediaSession API
+  const createPlatformDetector = () => {
+    if (!import.meta.client) return { isiOS: false, isAndroid: false, isSafari: false, isMobile: false, isPWA: false }
+
+    const userAgent = navigator.userAgent
+    return {
+      isiOS: /iPad|iPhone|iPod/.test(userAgent),
+      isAndroid: /Android/.test(userAgent),
+      isSafari: /Safari/.test(userAgent) && !/Chrome/.test(userAgent),
+      isMobile: /Mobi|Android/i.test(userAgent),
+      isPWA: window.matchMedia('(display-mode: standalone)').matches
+    }
+  }
+
+  // Background-aware mode handling for MediaSession
+  const handleBackgroundNext = () => {
+    console.log('[MediaSession] Background next track triggered, mode:', playerMode.value)
+    switch (playerMode.value) {
+      case 'shuffle':
+        playRandomSurah()
+        break
+      case 'autoNext':
+        playNextSurah()
+        break
+      case 'loop':
+        seekTo(0)
+        play()
+        break
+      case 'none':
+      default:
+        // Default to next surah for better UX
+        playNextSurah()
+        break
+    }
+  }
+
+  const handleBackgroundPrevious = () => {
+    console.log('[MediaSession] Background previous track triggered, mode:', playerMode.value)
+    switch (playerMode.value) {
+      case 'shuffle':
+        playRandomSurah()
+        break
+      case 'autoNext':
+        playPreviousSurah()
+        break
+      case 'loop':
+        seekTo(0)
+        play()
+        break
+      case 'none':
+      default:
+        // Default to previous surah for better UX
+        playPreviousSurah()
+        break
+    }
+  }
+
+  // iOS-specific MediaSession setup (no seek + track navigation conflict)
+  const setupiOSMediaSession = () => {
+    const actionHandlers = [
+      ['play', () => play()],
+      ['pause', () => pause()],
+      ['nexttrack', handleBackgroundNext],
+      ['previoustrack', handleBackgroundPrevious]
+      // Note: No seek handlers due to iOS Safari conflict
+    ]
+
+    // Set handlers after audio starts playing (iOS requirement)
+    const setHandlersAfterPlay = () => {
+      for (const [action, handler] of actionHandlers) {
+        try {
+          navigator.mediaSession.setActionHandler(action as MediaSessionAction, handler as MediaSessionActionHandler)
+          console.log(`[MediaSession iOS] Set handler for ${action}`)
+        } catch (error) {
+          console.warn(`[MediaSession iOS] Action "${action}" not supported:`, error)
+        }
+      }
+    }
+
+    // Listen for playing event to set handlers (iOS timing fix)
+    if (currentHowl.value) {
+      currentHowl.value.once('play', setHandlersAfterPlay)
+    }
+
+    return setHandlersAfterPlay
+  }
+
+  // Standard MediaSession setup (Android/Desktop - full feature support)
+  const setupStandardMediaSession = () => {
+    const actionHandlers = [
+      ['play', () => play()],
+      ['pause', () => pause()],
+      ['nexttrack', handleBackgroundNext],
+      ['previoustrack', handleBackgroundPrevious],
+      ['seekbackward', (details: MediaSessionActionDetails) => {
+        const skipTime = details.seekOffset || 10
+        const newTime = Math.max(0, currentTime.value - skipTime)
+        seekTo(newTime)
+      }],
+      ['seekforward', (details: MediaSessionActionDetails) => {
+        const skipTime = details.seekOffset || 10
+        const newTime = Math.min(duration.value, currentTime.value + skipTime)
+        seekTo(newTime)
+      }],
+      ['seekto', (details: MediaSessionActionDetails) => {
+        if (details.seekTime !== undefined) {
+          seekTo(details.seekTime)
+        }
+      }]
+    ]
+
+    for (const [action, handler] of actionHandlers) {
+      try {
+        navigator.mediaSession.setActionHandler(action as MediaSessionAction, handler as MediaSessionActionHandler)
+        console.log(`[MediaSession Standard] Set handler for ${action}`)
+      } catch (error) {
+        console.warn(`[MediaSession Standard] Action "${action}" not supported:`, error)
+      }
+    }
+  }
+
+  // Initialize MediaSession API for native OS controls with platform-specific setup
   const initMediaSession = () => {
     if (!import.meta.client || !('mediaSession' in navigator)) return
 
-    // Set up media action handlers
-    navigator.mediaSession.setActionHandler('play', () => {
-      play()
-    })
+    const platform = createPlatformDetector()
+    console.log('[MediaSession] Detected platform:', platform)
 
-    navigator.mediaSession.setActionHandler('pause', () => {
-      pause()
-    })
-
-    navigator.mediaSession.setActionHandler('seekbackward', (details) => {
-      const skipTime = details.seekOffset || 10
-      const newTime = Math.max(0, currentTime.value - skipTime)
-      seekTo(newTime)
-    })
-
-    navigator.mediaSession.setActionHandler('seekforward', (details) => {
-      const skipTime = details.seekOffset || 10
-      const newTime = Math.min(duration.value, currentTime.value + skipTime)
-      seekTo(newTime)
-    })
-
-    navigator.mediaSession.setActionHandler('seekto', (details) => {
-      if (details.seekTime !== undefined) {
-        seekTo(details.seekTime)
-      }
-    })
+    if (platform.isiOS) {
+      console.log('[MediaSession] Using iOS-specific setup')
+      return setupiOSMediaSession()
+    } else {
+      console.log('[MediaSession] Using standard setup')
+      setupStandardMediaSession()
+      return null
+    }
   }
 
   // Update MediaSession metadata with cover image
@@ -228,10 +334,10 @@ export const useAudioPlayer = () => {
         audioFile.value = {
           id: surahId,
           chapter_id: surahId,
-          file_size: metadata.fileSize || 0,
-          format: metadata.format || 'ogg',
+          file_size: (metadata as any).fileSize || 0,
+          format: (metadata as any).format || 'ogg',
           audio_url: '',  // Will be set below
-          duration: metadata.duration || 0,
+          duration: (metadata as any).duration || 0,
           verse_timings: [] // Empty for now - verse timings not available in current metadata
         }
       }
@@ -253,7 +359,7 @@ export const useAudioPlayer = () => {
       const howl = new Howl({
         src: [audioUrl],
         html5: true, // CRITICAL: Use HTML5 Audio for large files and streaming
-        preload: networkType.value === 'cellular' ? 'metadata' : 'auto',
+        preload: networkType.value === 'cellular' ? 'metadata' : true,
         format: ['ogg', 'mp3'], // Explicit format support
         onload: () => {
           duration.value = howl.duration()
@@ -273,8 +379,10 @@ export const useAudioPlayer = () => {
             howl.seek(0)
             currentTime.value = 0
 
-            // Reset saved time for new playback session
-            localStorage.updateCurrentState(currentSurahId, 0)
+            // Reset saved time for new playbook session
+            if (currentSurahId) {
+              localStorage.updateCurrentState(currentSurahId, 0)
+            }
           }
 
           console.log('[HowlerPlayer] Audio loaded successfully, duration:', duration.value)
@@ -332,6 +440,14 @@ export const useAudioPlayer = () => {
 
       // Store the Howl instance
       currentHowl.value = howl
+
+      // Reinitialize MediaSession handlers for new audio (especially important for iOS)
+      const platform = createPlatformDetector()
+      if (platform.isiOS) {
+        // For iOS, set up handlers to be applied when audio starts playing
+        setupiOSMediaSession()
+      }
+      // Note: For non-iOS platforms, handlers are already set during initMediaSession
 
       // Reset saved time tracker for new audio
       lastSavedTime = 0
@@ -511,23 +627,37 @@ export const useAudioPlayer = () => {
 
   // Handle audio end with new player modes
   const handleAudioEnd = () => {
+    console.log('[HowlerPlayer] Audio ended, player mode:', playerMode.value)
+
+    // Update MediaSession state for background handling
+    if (import.meta.client && 'mediaSession' in navigator) {
+      navigator.mediaSession.playbackState = 'paused'
+    }
+
     switch (playerMode.value) {
       case 'loop':
+        console.log('[HowlerPlayer] Loop mode: restarting current surah')
         seekTo(0)
         play()
         break
 
       case 'shuffle':
+        console.log('[HowlerPlayer] Shuffle mode: playing random surah')
         playRandomSurah()
         break
 
       case 'autoNext':
+        console.log('[HowlerPlayer] AutoNext mode: playing next surah')
         playNextSurah()
         break
 
       case 'none':
       default:
-        // If none of the modes are active, just stop playing
+        console.log('[HowlerPlayer] No auto-progression mode active')
+        // Update MediaSession to none state
+        if (import.meta.client && 'mediaSession' in navigator) {
+          navigator.mediaSession.playbackState = 'none'
+        }
         break
     }
   }
