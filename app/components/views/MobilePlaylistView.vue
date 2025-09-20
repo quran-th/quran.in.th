@@ -82,20 +82,22 @@
       <!-- Enhanced Surah List -->
       <div class="flex-1 min-h-0">
         <div class="relative h-full">
-          <div class="space-y-3 h-full overflow-y-auto pb-4">
+          <div class="space-y-3 h-full overflow-y-auto pb-4" ref="surahListContainer">
             <div
               v-for="surah in surahs"
               :key="surah.id"
+              :data-surah-id="surah.id"
+              :ref="currentSurah === surah.id ? 'currentSurahElement' : undefined"
               class="relative rounded-2xl overflow-hidden cursor-pointer transition-all duration-200 hover:scale-[1.02] active:scale-[0.98]"
               :class="{ 'opacity-70 pointer-events-none': loadingSurahId === surah.id }"
               @click="() => playSurahAndTransition(surah.id)"
             >
               <!-- Background Card -->
-              <div class="bg-gradient-to-r from-[rgb(191,179,147)] to-[rgb(171,159,127)] dark:from-[rgb(35,32,48)] dark:to-[rgb(25,22,38)] p-4">
+              <div class="bg-gradient-to-r from-[rgb(191,179,147)] to-[rgb(171,159,127)] dark:from-[rgb(35,32,48)] dark:to-[rgb(25,22,38)] p-2 md:p-4">
                 <!-- Content -->
                 <div class="flex items-center">
                   <!-- Surah Number/Artwork -->
-                  <div class="w-14 h-14 bg-white/20 dark:bg-[rgb(191,179,147)] rounded-2xl flex items-center justify-center mr-4 flex-shrink-0">
+                  <div class="w-14 h-14 bg-white/20 dark:bg-[rgb(191,179,147)] rounded-xl flex items-center justify-center mr-4 flex-shrink-0">
                     <span class="text-white dark:text-slate-800 font-bold text-lg">{{ surah.id }}</span>
                   </div>
 
@@ -114,9 +116,12 @@
 
                   <!-- Play Button -->
                   <button
-                    class="w-12 h-12 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center hover:bg-white/30 transition-all hover:scale-105 active:scale-95 ml-3"
+                    class="w-12 h-12 backdrop-blur-sm rounded-full flex items-center justify-center transition-all hover:scale-105 active:scale-95 ml-3"
+                    :class="currentSurah === surah.id
+                      ? 'bg-white dark:bg-[rgb(191,179,147)] hover:bg-white/90 dark:hover:bg-[rgb(191,179,147)]/90'
+                      : 'bg-white/20 hover:bg-white/30'"
                     :disabled="loadingSurahId === surah.id"
-                    @click.stop="() => playFromHero(surah.id)"
+                    @click.stop="() => handlePlayButtonClick(surah.id)"
                   >
                     <!-- Loading spinner for this specific surah -->
                     <div
@@ -127,8 +132,12 @@
                     <UIcon
                       v-else
                       :name="currentSurah === surah.id && isPlaying ? 'i-heroicons-pause' : 'i-heroicons-play'"
-                      class="w-6 h-6 text-white"
-                      :class="{ 'ml-0.5': !(currentSurah === surah.id && isPlaying) }"
+                      class="w-6 h-6"
+                      :class="{
+                        'ml-0.5': !(currentSurah === surah.id && isPlaying),
+                        'text-slate-800 dark:text-white': currentSurah === surah.id,
+                        'text-white': currentSurah !== surah.id
+                      }"
                     />
                   </button>
                 </div>
@@ -137,7 +146,7 @@
           </div>
 
           <!-- Bottom fade overlay -->
-          <div class="absolute bottom-0 left-0 right-0 h-6 bg-gradient-to-t from-[#e7e8f3] dark:from-[rgb(14,13,34)] to-transparent pointer-events-none" />
+          <div class="absolute bottom-0 left-0 right-0 h-6 bg-gradient-to-t from-slate-100 dark:from-slate-900 to-transparent pointer-events-none" />
         </div>
       </div>
     </div>
@@ -173,6 +182,7 @@ const {
 
   // Methods
   playFromHero,
+  togglePlay,
   clearError,
   getCurrentSurahName,
   formatDuration
@@ -184,6 +194,10 @@ const loadingSurahId = ref<number | null>(null)
 // Track last attempted surah for retry functionality
 const lastAttemptedSurahId = ref<number | null>(null)
 
+// Template refs
+const surahListContainer = ref<HTMLElement>()
+const currentSurahElement = ref<HTMLElement>()
+
 // Events
 const emit = defineEmits<{
   goToPlayer: []
@@ -191,6 +205,18 @@ const emit = defineEmits<{
 }>()
 
 // Methods
+// Handle play button clicks with proper play/pause logic
+const handlePlayButtonClick = async (surahId: number) => {
+  // If clicking on the currently selected surah
+  if (currentSurah.value === surahId) {
+    // Just toggle play/pause without restarting
+    await togglePlay()
+  } else {
+    // Different surah - play from beginning
+    await playFromHero(surahId)
+  }
+}
+
 const playSurahAndTransition = async (surahId: number) => {
   try {
     // Track the attempted surah for retry functionality
@@ -242,4 +268,36 @@ const retryLastSurah = async () => {
     await playSurahAndTransition(lastAttemptedSurahId.value)
   }
 }
+
+// Scroll to current playing surah or last attempted surah (for error cases)
+const scrollToCurrentSurah = () => {
+  const targetSurahId = currentSurah.value || lastAttemptedSurahId.value
+  if (targetSurahId && surahListContainer.value) {
+    setTimeout(() => {
+      // Find the target surah element
+      const targetElement = surahListContainer.value?.querySelector(`[data-surah-id="${targetSurahId}"]`)
+      if (targetElement) {
+        targetElement.scrollIntoView({
+          behavior: 'smooth',
+          block: 'center'
+        })
+      }
+    }, 100) // Small delay to ensure DOM is updated
+  }
+}
+
+// Watch for currentSurah changes and scroll when playlist view loads
+watch(currentSurah, () => {
+  scrollToCurrentSurah()
+}, { immediate: true })
+
+// Watch for lastAttemptedSurahId changes (for error cases)
+watch(lastAttemptedSurahId, () => {
+  scrollToCurrentSurah()
+})
+
+// Also scroll when component mounts
+onMounted(() => {
+  scrollToCurrentSurah()
+})
 </script>

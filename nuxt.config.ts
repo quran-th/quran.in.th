@@ -115,6 +115,12 @@ export default defineNuxtConfig({
     "@nuxt/eslint"
   ],
 
+  colorMode: {
+    preference: 'light', // Set default to light instead of system
+    fallback: 'light',   // Fallback when system preference can't be detected
+    storageKey: 'nuxt-color-mode'
+  },
+
   runtimeConfig: {
     // Private keys (only available on server-side)
     // Environment-specific audio handling:

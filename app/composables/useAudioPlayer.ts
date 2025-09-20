@@ -511,18 +511,31 @@ export const useAudioPlayer = () => {
 
   // Handle audio end with new player modes
   const handleAudioEnd = () => {
-    if (loopPlay.value) {
-      // Loop current surah
-      seekTo(0)
-      play()
-    } else if (shufflePlay.value) {
-      // Play random surah
-      playRandomSurah()
-    } else if (autoPlayNext.value) {
-      // Play next sequential surah
-      playNextSurah()
+    console.log('[HowlerPlayer] Audio ended, checking player mode:', playerMode.value)
+
+    switch (playerMode.value) {
+      case 'loop':
+        console.log('[HowlerPlayer] Loop mode: restarting current surah')
+        seekTo(0)
+        play()
+        break
+
+      case 'shuffle':
+        console.log('[HowlerPlayer] Shuffle mode: playing random surah')
+        playRandomSurah()
+        break
+
+      case 'autoNext':
+        console.log('[HowlerPlayer] Auto-next mode: playing next surah')
+        playNextSurah()
+        break
+
+      case 'none':
+      default:
+        console.log('[HowlerPlayer] No autoplay mode active, stopping playback')
+        // If none of the modes are active, just stop playing
+        break
     }
-    // If none of the modes are active, just stop playing
   }
 
   // Play random surah for shuffle mode
@@ -546,6 +559,18 @@ export const useAudioPlayer = () => {
       console.error('[HowlerPlayer] Error loading random surah:', error)
       error.value = 'Failed to load random surah'
     }
+  }
+
+  // Select random surah from available surahs list when current surah is null
+  const selectRandomSurahFromList = (surahs: readonly { readonly id: number }[]) => {
+    if (!surahs.length) return null
+
+    const randomIndex = Math.floor(Math.random() * surahs.length)
+    const selectedSurah = surahs[randomIndex]
+
+    console.log(`🎲 No current surah found - selecting random surah: ${selectedSurah.id} from ${surahs.length} available surahs`)
+
+    return selectedSurah.id
   }
 
   // Play next sequential surah
@@ -609,20 +634,28 @@ export const useAudioPlayer = () => {
 
   // Functions to set player mode (ensuring only one is active)
   const setPlayerMode = (mode: 'autoNext' | 'shuffle' | 'loop' | 'none') => {
+    console.log('[HowlerPlayer] Setting player mode:', mode)
     playerMode.value = mode
     localStorage.updatePlayerMode(mode)
+    console.log('[HowlerPlayer] Player mode updated to:', playerMode.value)
   }
 
   const toggleShufflePlay = () => {
-    setPlayerMode(shufflePlay.value ? 'none' : 'shuffle')
+    const newMode = shufflePlay.value ? 'none' : 'shuffle'
+    console.log('[HowlerPlayer] Toggling shuffle play from', shufflePlay.value, 'to mode:', newMode)
+    setPlayerMode(newMode)
   }
 
   const toggleLoopPlay = () => {
-    setPlayerMode(loopPlay.value ? 'none' : 'loop')
+    const newMode = loopPlay.value ? 'none' : 'loop'
+    console.log('[HowlerPlayer] Toggling loop play from', loopPlay.value, 'to mode:', newMode)
+    setPlayerMode(newMode)
   }
 
   const toggleAutoPlayNext = () => {
-    setPlayerMode(autoPlayNext.value ? 'none' : 'autoNext')
+    const newMode = autoPlayNext.value ? 'none' : 'autoNext'
+    console.log('[HowlerPlayer] Toggling auto play next from', autoPlayNext.value, 'to mode:', newMode)
+    setPlayerMode(newMode)
   }
 
   // Watch reactive state changes to save to localStorage
@@ -649,6 +682,7 @@ export const useAudioPlayer = () => {
   onMounted(() => {
     if (import.meta.client) {
       initMediaSession()
+      console.log('[HowlerPlayer] Audio player initialized - playerMode:', playerMode.value, 'shuffle:', shufflePlay.value, 'loop:', loopPlay.value, 'autoNext:', autoPlayNext.value)
     }
   })
 
@@ -722,6 +756,9 @@ export const useAudioPlayer = () => {
     clearPlayerState: localStorage.clearPlayerState,
     getRandomSurah: localStorage.getRandomSurah,
     updateCurrentTime: localStorage.updateCurrentTime,
-    updateCurrentState: localStorage.updateCurrentState
+    updateCurrentState: localStorage.updateCurrentState,
+
+    // Utility functions
+    selectRandomSurahFromList
   }
 }

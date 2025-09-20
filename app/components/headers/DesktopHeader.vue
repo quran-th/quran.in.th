@@ -31,6 +31,13 @@
 
 <script setup lang="ts">
 // Use useState-based state management instead of props
-const { isDark, toggleDarkMode } = useThemeActions()
 const { isLargePlayerMode, togglePlayerMode } = usePlayerModeActions()
+
+// Use colorMode directly to avoid reactivity issues
+const colorMode = useColorMode()
+const isDark = computed(() => colorMode.value === 'dark')
+
+const toggleDarkMode = () => {
+  colorMode.value = colorMode.value === 'dark' ? 'light' : 'dark'
+}
 </script>

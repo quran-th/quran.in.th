@@ -1,10 +1,10 @@
 <template>
-  <div class="h-screen bg-[#e7e8f3] dark:bg-[rgb(14,13,34)] relative flex flex-col overflow-hidden">
-    <!-- Mobile Header (only visible in playlist view) -->
-    <MobileHeader
-      v-if="currentView === 'playlist'"
-      :is-dark="isDark"
-      :toggle-dark-mode="toggleDarkMode"
+  <div class="h-mobile-screen bg-slate-100 dark:bg-slate-900 relative flex flex-col overflow-hidden">
+    <!-- Persistent Player Header -->
+    <PlayerHeader
+      :show-back-button="true"
+      :button-icon="currentView === 'playlist' ? 'back' : 'playlist'"
+      @go-back="handleHeaderNavigation"
     />
 
     <!-- View Container with Transitions -->
@@ -33,9 +33,7 @@
           key="player"
           class="absolute inset-0"
         >
-          <MobilePlayerView
-            @go-back="transitionToPlaylist"
-          />
+          <MobilePlayerView />
         </div>
       </Transition>
     </div>
@@ -57,7 +55,7 @@
 <script setup lang="ts">
 // Import components
 import PlayerConfigModal from '~/components/modals/PlayerConfigModal.vue'
-import MobileHeader from '~/components/headers/MobileHeader.vue'
+import PlayerHeader from '~/components/headers/PlayerHeader.vue'
 import MobilePlaylistView from '~/components/views/MobilePlaylistView.vue'
 import MobilePlayerView from '~/components/views/MobilePlayerView.vue'
 
@@ -65,10 +63,6 @@ import MobilePlayerView from '~/components/views/MobilePlayerView.vue'
 const {
   // Audio state
   isPlaying,
-
-  // Theme
-  isDark,
-  toggleDarkMode,
 
   // Player configuration
   shufflePlay,
@@ -92,6 +86,16 @@ const transitionToPlayer = () => {
 
 const transitionToPlaylist = () => {
   currentView.value = 'playlist'
+}
+
+const handleHeaderNavigation = () => {
+  if (currentView.value === 'playlist') {
+    // Handle back button from playlist - switch to player view
+    transitionToPlayer()
+  } else {
+    // Handle playlist button from player - navigate back to playlist
+    transitionToPlaylist()
+  }
 }
 
 // Auto-transition to player when audio starts playing

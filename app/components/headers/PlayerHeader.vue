@@ -1,12 +1,18 @@
 <template>
   <div class="flex items-center justify-between px-4 py-3 mt-8 max-[400px]:mt-4 bg-transparent">
-    <!-- Left: Back Button -->
+    <!-- Left: Navigation Button (optional) -->
     <button
+      v-if="showBackButton"
       class="w-10 h-10 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center text-slate-700 dark:text-slate-300 hover:bg-slate-300 dark:hover:bg-slate-600 transition-all active:scale-95"
       @click="$emit('goBack')"
     >
-      <UIcon name="i-heroicons-chevron-left" class="w-6 h-6" />
+      <UIcon
+        :name="buttonIcon === 'back' ? 'i-heroicons-chevron-left' : 'i-heroicons-queue-list'"
+        class="w-6 h-6 transition-all duration-300 ease-in-out"
+      />
     </button>
+    <!-- Spacer when no back button -->
+    <div v-else class="w-10 h-10"></div>
 
     <!-- Center: Track Info -->
     <div class="flex-1 text-center mx-4">
@@ -36,18 +42,35 @@
  * PlayerHeader Component
  *
  * Two-line header for the mobile player view featuring:
- * - Back navigation button (left)
+ * - Back navigation button (left) - optional with showBackButton prop
  * - Two-line track info (center) - bold surah name, smaller reciter name
  * - Theme toggle button (right) - switches between light/dark mode
  */
 
+// Props
+interface Props {
+  showBackButton?: boolean
+  buttonIcon?: 'back' | 'playlist'
+}
+
+const props = withDefaults(defineProps<Props>(), {
+  showBackButton: true,
+  buttonIcon: 'back'
+})
+
 // Use integrated app composable
 const {
   currentReciterName,
-  getCurrentSurahName,
-  isDark,
-  toggleDarkMode
+  getCurrentSurahName
 } = useAppIntegrated()
+
+// Use colorMode directly to avoid reactivity issues
+const colorMode = useColorMode()
+const isDark = computed(() => colorMode.value === 'dark')
+
+const toggleDarkMode = () => {
+  colorMode.value = colorMode.value === 'dark' ? 'light' : 'dark'
+}
 
 // Events
 defineEmits<{

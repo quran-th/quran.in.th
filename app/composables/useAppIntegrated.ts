@@ -115,10 +115,24 @@ export const useAppIntegrated = () => {
       return
     }
 
-    // If no surah selected or no audio loaded, use saved surah or default to Al-Fatiha
+    // If no surah selected or no audio loaded, use saved surah or pick random from available surahs
     if (!selectedSurahValue.value) {
-      setSelectedSurah(audioPlayer.currentSurah.value || 1)
-      console.log(`🎵 playFromHero: Selected surah ${selectedSurahValue.value} ${audioPlayer.currentSurah.value ? '(from localStorage)' : '(default Al-Fatiha)'}`)
+      if (audioPlayer.currentSurah.value) {
+        // Use saved surah from localStorage
+        setSelectedSurah(audioPlayer.currentSurah.value)
+        console.log(`🎵 playFromHero: Selected saved surah ${audioPlayer.currentSurah.value} (from localStorage)`)
+      } else {
+        // No saved surah - pick random from available surahs list
+        const randomSurahId = audioPlayer.selectRandomSurahFromList(surahs.value)
+        if (randomSurahId) {
+          setSelectedSurah(randomSurahId)
+          console.log(`🎵 playFromHero: No saved surah found - selected random surah ${randomSurahId} from fetched list`)
+        } else {
+          // Fallback to Al-Fatiha if no surahs available yet
+          setSelectedSurah(1)
+          console.log(`🎵 playFromHero: No surahs available yet - defaulting to Al-Fatiha`)
+        }
+      }
     }
 
     // Auto-play the selected audio
@@ -218,7 +232,27 @@ export const useAppIntegrated = () => {
   // Restore saved session automatically (surah + position)
   const restoreSavedSession = async () => {
     if (!audioPlayer.currentSurah.value) {
-      console.log('🔄 No saved session to restore')
+      console.log('🔄 No saved session to restore - selecting random surah for better UX')
+
+      // Pick random from available surahs list for better UX
+      const randomSurahId = audioPlayer.selectRandomSurahFromList(surahs.value)
+      if (randomSurahId) {
+        setSelectedSurah(randomSurahId)
+        // Load the random audio (start from beginning)
+        await audioPlayer.loadAudio(randomSurahId, currentReciterId.value)
+
+        // Update MediaSession metadata
+        const surah = getSurahById(randomSurahId)
+        if (surah) {
+          const surahDisplayName = `ซูเราะฮฺ ${surah.thaiName}`
+          const reciterName = currentReciterName.value
+          audioPlayer.updateMediaSessionMetadata(surahDisplayName, `เสียงแปลโดย ${reciterName}`)
+        }
+
+        console.log(`✅ Random surah ${randomSurahId} loaded and ready for playback`)
+        return true
+      }
+
       return false
     }
 

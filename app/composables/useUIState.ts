@@ -30,15 +30,18 @@ export const useUIState = () => {
 export const useThemeActions = () => {
   const colorMode = useColorMode()
 
-  // Direct computed based on Nuxt's colorMode - no sync needed
+  // Force reactivity by returning the colorMode directly
   const isDark = computed(() => colorMode.value === 'dark')
+
+  const toggleDarkMode = () => {
+    // Explicitly toggle to ensure proper state change
+    colorMode.value = colorMode.value === 'dark' ? 'light' : 'dark'
+  }
 
   return {
     isDark: readonly(isDark),
-
-    toggleDarkMode: () => {
-      colorMode.value = isDark.value ? 'light' : 'dark'
-    }
+    colorMode: readonly(colorMode),
+    toggleDarkMode
   }
 }
 

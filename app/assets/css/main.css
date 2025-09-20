@@ -172,7 +172,8 @@ body {
     sans-serif;
   margin: 0;
   padding: 0;
-  height: 100dvh;
+  height: 100vh;
+  height: 100dvh; /* Use dynamic viewport height when supported */
   overflow-x: hidden;
 }
 
@@ -313,6 +314,13 @@ body {
   .safe-bottom {
     padding-bottom: max(20px, env(safe-area-inset-bottom));
   }
+}
+
+/* Mobile viewport height fix for Safari */
+.h-mobile-screen {
+  height: 100vh;
+  height: 100dvh; /* Use dynamic viewport height when supported */
+  height: 100svh; /* Use small viewport height as fallback */
 }
 
 /* Custom scrollbar for mobile */

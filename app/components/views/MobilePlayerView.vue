@@ -2,13 +2,8 @@
   <div class="h-full relative overflow-hidden bg-slate-100 dark:bg-slate-900">
     <!-- Content -->
     <div class="h-full flex flex-col">
-      <!-- Player Header -->
-      <PlayerHeader
-        @go-back="$emit('goBack')"
-      />
-
       <!-- Main Player Content -->
-      <div class="flex-1 flex flex-col justify-center px-6 pb-8">
+      <div class="flex-1 flex flex-col justify-center px-6 pb-12">
         <!-- Album Art Section -->
         <div class="text-center mb-8">
           <!-- Large Album Art -->
@@ -270,7 +265,6 @@
  */
 
 // Import components
-import PlayerHeader from '~/components/headers/PlayerHeader.vue'
 import PlaybackSpeedControl from '~/components/ui/PlaybackSpeedControl.vue'
 import PlayerConfigModal from '~/components/modals/PlayerConfigModal.vue'
 
@@ -382,10 +376,6 @@ onUnmounted(() => {
   stopRotation()
 })
 
-// Events
-defineEmits<{
-  goBack: []
-}>()
 
 // Methods
 const getSurahDisplayName = () => {
