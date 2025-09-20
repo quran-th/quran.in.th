@@ -32,3 +32,6 @@ logs
 # Audio files (moved to R2 bucket)
 public/audio/
 public/audio_backup/
+
+# development 
+tasks/

@@ -511,28 +511,22 @@ export const useAudioPlayer = () => {
 
   // Handle audio end with new player modes
   const handleAudioEnd = () => {
-    console.log('[HowlerPlayer] Audio ended, checking player mode:', playerMode.value)
-
     switch (playerMode.value) {
       case 'loop':
-        console.log('[HowlerPlayer] Loop mode: restarting current surah')
         seekTo(0)
         play()
         break
 
       case 'shuffle':
-        console.log('[HowlerPlayer] Shuffle mode: playing random surah')
         playRandomSurah()
         break
 
       case 'autoNext':
-        console.log('[HowlerPlayer] Auto-next mode: playing next surah')
         playNextSurah()
         break
 
       case 'none':
       default:
-        console.log('[HowlerPlayer] No autoplay mode active, stopping playback')
         // If none of the modes are active, just stop playing
         break
     }
@@ -634,27 +628,22 @@ export const useAudioPlayer = () => {
 
   // Functions to set player mode (ensuring only one is active)
   const setPlayerMode = (mode: 'autoNext' | 'shuffle' | 'loop' | 'none') => {
-    console.log('[HowlerPlayer] Setting player mode:', mode)
     playerMode.value = mode
     localStorage.updatePlayerMode(mode)
-    console.log('[HowlerPlayer] Player mode updated to:', playerMode.value)
   }
 
   const toggleShufflePlay = () => {
     const newMode = shufflePlay.value ? 'none' : 'shuffle'
-    console.log('[HowlerPlayer] Toggling shuffle play from', shufflePlay.value, 'to mode:', newMode)
     setPlayerMode(newMode)
   }
 
   const toggleLoopPlay = () => {
     const newMode = loopPlay.value ? 'none' : 'loop'
-    console.log('[HowlerPlayer] Toggling loop play from', loopPlay.value, 'to mode:', newMode)
     setPlayerMode(newMode)
   }
 
   const toggleAutoPlayNext = () => {
     const newMode = autoPlayNext.value ? 'none' : 'autoNext'
-    console.log('[HowlerPlayer] Toggling auto play next from', autoPlayNext.value, 'to mode:', newMode)
     setPlayerMode(newMode)
   }
 
@@ -682,7 +671,6 @@ export const useAudioPlayer = () => {
   onMounted(() => {
     if (import.meta.client) {
       initMediaSession()
-      console.log('[HowlerPlayer] Audio player initialized - playerMode:', playerMode.value, 'shuffle:', shufflePlay.value, 'loop:', loopPlay.value, 'autoNext:', autoPlayNext.value)
     }
   })
 
