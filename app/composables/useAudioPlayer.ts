@@ -46,8 +46,28 @@ export const useAudioPlayer = () => {
   // Track last saved time to prevent excessive localStorage updates
   let lastSavedTime = 0
 
-  // Track playback session state
-  let isResumingFromPause = false
+  // Playback controls
+  const play = async () => {
+    if (!currentHowl.value) return
+
+    try {
+      isBuffering.value = true
+      soundId.value = currentHowl.value.play() as number
+
+      // Set volume and rate
+      currentHowl.value.volume(volume.value / 100)
+      currentHowl.value.rate(playbackRate.value)
+    } catch (error) {
+      console.error('[HowlerPlayer] Error playing audio:', error)
+      error.value = 'เกิดข้อผิดพลาดในการเล่นเสียง กรุณาลองใหม่'
+      isBuffering.value = false
+    }
+  }
+
+  const pause = () => {
+    if (!currentHowl.value) return
+    currentHowl.value.pause()
+  }
 
   // Network type detection (preserved from original)
   const networkType = ref<'cellular' | 'wifi' | 'unknown'>('unknown')
@@ -370,7 +390,7 @@ export const useAudioPlayer = () => {
   }
 
   // Load and configure Howl for streaming large audio files
-  const loadAudio = async (surahId: number, reciterId: number, resumeFromPause = false) => {
+  const loadAudio = async (surahId: number, reciterId: number) => {
     try {
       // Cleanup previous Howl instance
       if (currentHowl.value) {
@@ -404,7 +424,7 @@ export const useAudioPlayer = () => {
         }
       }
 
-      // Get audio URL (handles dev/production environments)
+      // Get audio URL (handles dev/production environments)!
       const audioUrl = await getAudioUrl(surahId, reciterId)
 
       // Update the audio file URL
@@ -427,24 +447,19 @@ export const useAudioPlayer = () => {
           duration.value = howl.duration()
           isLoading.value = false
 
-          // Handle time restoration based on context
+          // Handle time restoration
           const savedTime = initialState.currentTime || 0
           const savedSurah = initialState.currentSurah
           const currentSurahId = currentSurah.value
 
-          if (resumeFromPause && savedTime > 0 && savedTime < duration.value && savedSurah === currentSurahId) {
-            // Scenario 2: Resuming from pause - restore saved position
+          // If loading the same surah that was last played, seek to the saved position
+          if (savedSurah === currentSurahId && savedTime > 0 && savedTime < duration.value) {
             howl.seek(savedTime)
             currentTime.value = savedTime
           } else {
-            // Scenario 1: Loading saved surah from localStorage - start from beginning
+            // Otherwise, start from the beginning
             howl.seek(0)
             currentTime.value = 0
-
-            // Reset saved time for new playbook session
-            if (currentSurahId) {
-              localStorage.updateCurrentState(currentSurahId, 0)
-            }
           }
 
           console.log('[HowlerPlayer] Audio loaded successfully, duration:', duration.value)
@@ -478,6 +493,11 @@ export const useAudioPlayer = () => {
           // Update MediaSession
           if (import.meta.client && 'mediaSession' in navigator) {
             navigator.mediaSession.playbackState = 'paused'
+          }
+
+          // Save current state to localStorage as the single source of truth on pause
+          if (currentSurah.value) {
+            localStorage.updateCurrentState(currentSurah.value, currentTime.value)
           }
 
           console.log('[HowlerPlayer] Playback paused')
@@ -574,49 +594,6 @@ export const useAudioPlayer = () => {
     }
   }
 
-  // Playback controls
-  const play = async () => {
-    if (!currentHowl.value) return
-
-    try {
-      isBuffering.value = true
-
-      // If resuming from a paused state and we have a saved time for same surah, seek to it
-      const savedTime = initialState.currentTime || 0
-      const savedSurah = initialState.currentSurah
-      if (isResumingFromPause && savedTime > 0 && savedSurah === currentSurah.value) {
-        currentHowl.value.seek(savedTime)
-        currentTime.value = savedTime
-        isResumingFromPause = false // Reset flag
-      }
-
-      soundId.value = currentHowl.value.play() as number
-
-      // Set volume and rate
-      currentHowl.value.volume(volume.value / 100)
-      currentHowl.value.rate(playbackRate.value)
-
-    } catch (error) {
-      console.error('[HowlerPlayer] Error playing audio:', error)
-      error.value = 'เกิดข้อผิดพลาดในการเล่นเสียง กรุณาลองใหม่'
-      isBuffering.value = false
-    }
-  }
-
-  const pause = () => {
-    if (!currentHowl.value) return
-
-    currentHowl.value.pause()
-
-    // Set flag for resume functionality
-    isResumingFromPause = true
-
-    // Save current state (surah + time) when pausing
-    if (currentSurah.value) {
-      localStorage.updateCurrentState(currentSurah.value, currentTime.value)
-    }
-  }
-
   const togglePlay = async () => {
     if (isPlaying.value) {
       pause()
@@ -624,6 +601,8 @@ export const useAudioPlayer = () => {
       await play()
     }
   }
+
+
 
   // Seeking
   const seekTo = (seconds: number) => {
