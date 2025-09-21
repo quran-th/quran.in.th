@@ -8,7 +8,8 @@
 
     <div class="relative flex-1 min-h-0">
       <div class="space-y-3 h-full overflow-y-auto">
-        <div v-for="reciter in availableReciters" :key="reciter.id"
+        <div
+v-for="reciter in availableReciters" :key="reciter.id"
           class="relative rounded-2xl overflow-hidden cursor-pointer transition-transform active:scale-98"
           @click="() => selectReciter(reciter.id)">
           <!-- Background Card -->
@@ -25,7 +26,8 @@
                       {{ reciter.name }}
                     </h3>
                     <div class="flex items-center">
-                      <div v-if="currentReciterId === parseInt(reciter.id)"
+                      <div
+v-if="currentReciterId === parseInt(reciter.id)"
                         class="flex items-center text-white/80 text-sm">
                         <UIcon name="i-heroicons-check-circle" class="w-4 h-4 mr-1" />
                         กำลังใช้งาน
@@ -40,7 +42,8 @@
 
               <!-- Selection Indicator -->
               <div class="flex items-center">
-                <div v-if="currentReciterId === parseInt(reciter.id)"
+                <div
+v-if="currentReciterId === parseInt(reciter.id)"
                   class="w-6 h-6 bg-white rounded-full flex items-center justify-center">
                   <UIcon name="i-heroicons-check" class="w-4 h-4 text-indigo-500" />
                 </div>

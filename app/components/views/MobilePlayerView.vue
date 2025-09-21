@@ -92,9 +92,9 @@
                     <UIcon name="i-heroicons-exclamation-triangle" class="w-3 h-3" />
                     <span>เกิดข้อผิดพลาด - กรุณาลองใหม่</span>
                     <button
-                      @click="clearError"
                       class="ml-2 text-red-600 dark:text-red-300 hover:text-red-400 dark:hover:text-red-100 transition-colors"
                       :title="'ล้างข้อผิดพลาด'"
+                      @click="clearError"
                     >
                       <UIcon name="i-heroicons-x-mark" class="w-3 h-3" />
                     </button>

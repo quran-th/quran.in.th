@@ -15,7 +15,8 @@
         <button
           class="w-14 h-14 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center text-white shadow-lg transition-all hover:bg-white/30 active:scale-95"
           :disabled="isLoading" :class="{ 'bg-red-500/80': error }" @click="() => playFromHero()">
-          <UIcon v-if="!isLoading && !error" :name="isPlaying ? 'i-heroicons-pause' : 'i-heroicons-play'"
+          <UIcon
+v-if="!isLoading && !error" :name="isPlaying ? 'i-heroicons-pause' : 'i-heroicons-play'"
             class="w-6 h-6" :class="{ 'ml-1': !isPlaying }" />
           <UIcon v-else-if="error" name="i-heroicons-exclamation-triangle" class="w-6 h-6" />
           <div v-else class="w-6 h-6 animate-spin rounded-full border-2 border-white border-t-transparent" />
@@ -68,9 +69,9 @@
                   <span>เกิดข้อผิดพลาด - กรุณาลองใหม่</span>
                 </div>
                 <button
-                  @click="clearError"
                   class="ml-2 text-red-400 hover:text-red-200 transition-colors"
                   :title="'ล้างข้อผิดพลาด'"
+                  @click="clearError"
                 >
                   <UIcon name="i-heroicons-x-mark" class="w-3 h-3" />
                 </button>
@@ -95,7 +96,8 @@
             }}</span>
         </div>
         <div class="w-full h-1 bg-white/20 rounded-full cursor-pointer" @click="seekToClick">
-          <div class="h-full bg-white rounded-full transition-all duration-300"
+          <div
+class="h-full bg-white rounded-full transition-all duration-300"
             :style="{ width: correctProgress + '%' }" />
         </div>
       </div>

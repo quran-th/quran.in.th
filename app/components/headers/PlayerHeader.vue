@@ -12,7 +12,7 @@
       />
     </button>
     <!-- Spacer when no back button -->
-    <div v-else class="w-10 h-10"></div>
+    <div v-else class="w-10 h-10"/>
 
     <!-- Center: Track Info -->
     <div class="flex-1 text-center mx-4">

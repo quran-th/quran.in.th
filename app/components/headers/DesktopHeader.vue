@@ -19,7 +19,8 @@
             <UIcon :name="isLargePlayerMode ? 'i-heroicons-list-bullet' : 'i-heroicons-play-circle'" class="w-4 h-4 mr-1" />
             {{ isLargePlayerMode ? 'เพลย์ลิสต์' : 'โหมดเล่น' }}
           </button>
-          <button class="w-8 h-8 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center"
+          <button
+class="w-8 h-8 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center"
             @click="toggleDarkMode">
             <UIcon :name="isDark ? 'i-heroicons-sun' : 'i-heroicons-moon'" class="w-4 h-4" />
           </button>

@@ -49,7 +49,8 @@
             <span class="text-sm text-slate-500 dark:text-slate-400">{{ getCurrentSurahTotalDuration() || formatTimeWithHours(duration) || '0:00' }}</span>
           </div>
           <div class="w-full h-2 bg-slate-200 dark:bg-slate-700 rounded-full cursor-pointer" @click="seekToClick">
-            <div class="h-full bg-gradient-to-r from-[rgb(191,179,147)] to-[rgb(171,159,127)] dark:from-[rgb(191,179,147)] dark:to-[rgb(171,159,127)] rounded-full transition-all duration-300"
+            <div
+class="h-full bg-gradient-to-r from-[rgb(191,179,147)] to-[rgb(171,159,127)] dark:from-[rgb(191,179,147)] dark:to-[rgb(171,159,127)] rounded-full transition-all duration-300"
               :style="{ width: correctProgress + '%' }" />
           </div>
         </div>
@@ -67,7 +68,8 @@
           <button
             class="w-20 h-20 rounded-full bg-gradient-to-br from-[rgb(191,179,147)] to-[rgb(171,159,127)] dark:from-[rgb(191,179,147)] dark:to-[rgb(171,159,127)] hover:from-[rgb(201,189,157)] hover:to-[rgb(181,169,137)] dark:hover:from-[rgb(201,189,157)] dark:hover:to-[rgb(181,169,137)] flex items-center justify-center text-white transition-all active:scale-95 shadow-xl"
             :disabled="!currentSurah || !currentReciter" @click="togglePlay">
-            <UIcon v-if="!isLoading && !error" :name="isPlaying ? 'i-heroicons-pause' : 'i-heroicons-play'"
+            <UIcon
+v-if="!isLoading && !error" :name="isPlaying ? 'i-heroicons-pause' : 'i-heroicons-play'"
               class="w-8 h-8 text-white" :class="{ 'ml-1': !isPlaying }" />
             <UIcon v-else-if="error" name="i-heroicons-exclamation-triangle" class="w-8 h-8 text-white" />
             <div v-else class="w-8 h-8 animate-spin rounded-full border-3 border-white border-t-transparent" />
