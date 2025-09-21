@@ -40,6 +40,9 @@ export const useAudioPlayer = () => {
   const soundId = useState<number | null>('player-soundId', () => null)
   const isBuffering = useState<boolean>('player-isBuffering', () => false)
 
+  // Screen Wake Lock sentinel
+  let wakeLock: WakeLockSentinel | null = null
+
   // Track last saved time to prevent excessive localStorage updates
   let lastSavedTime = 0
 
@@ -61,6 +64,36 @@ export const useAudioPlayer = () => {
     }
 
     return 'wifi'
+  }
+
+  // Screen Wake Lock management
+  const acquireWakeLock = async () => {
+    if (import.meta.client && 'wakeLock' in navigator) {
+      try {
+        wakeLock = await navigator.wakeLock.request('screen')
+        console.log('[WakeLock] Acquired')
+        // Handle release on visibility change (e.g., user switches tabs)
+        wakeLock.addEventListener('release', () => {
+          console.log('[WakeLock] Released by browser')
+          wakeLock = null
+        })
+      } catch (err: any) {
+        console.error(`[WakeLock] Failed to acquire: ${err.name}, ${err.message}`)
+        wakeLock = null
+      }
+    }
+  }
+
+  const releaseWakeLock = async () => {
+    if (import.meta.client && wakeLock) {
+      try {
+        await wakeLock.release()
+        console.log('[WakeLock] Released programmatically')
+        wakeLock = null
+      } catch (err: any) {
+        console.error(`[WakeLock] Failed to release: ${err.name}, ${err.message}`)
+      }
+    }
   }
 
   // Computed properties
@@ -109,6 +142,18 @@ export const useAudioPlayer = () => {
 
   // Background-aware mode handling for MediaSession
   const handleBackgroundNext = async () => {
+    // Use Web Locks to prevent the browser from suspending the script during track transition
+    if (import.meta.client && 'locks' in navigator) {
+      await navigator.locks.request('audio-player-lock', async () => {
+        await executeNextTrackLogic()
+      })
+    } else {
+      // Fallback for browsers that don't support Web Locks
+      await executeNextTrackLogic()
+    }
+  }
+
+  const executeNextTrackLogic = async () => {
     console.log('[MediaSession] Background next track triggered, mode:', playerMode.value)
 
     // Update MediaSession state to indicate processing
@@ -413,6 +458,9 @@ export const useAudioPlayer = () => {
           isPlaying.value = true
           isBuffering.value = false
 
+          // Acquire Wake Lock to prevent sleep during playback
+          acquireWakeLock()
+
           // Update MediaSession
           if (import.meta.client && 'mediaSession' in navigator) {
             navigator.mediaSession.playbackState = 'playing'
@@ -424,6 +472,9 @@ export const useAudioPlayer = () => {
         onpause: () => {
           isPlaying.value = false
 
+          // Release Wake Lock on pause
+          releaseWakeLock()
+
           // Update MediaSession
           if (import.meta.client && 'mediaSession' in navigator) {
             navigator.mediaSession.playbackState = 'paused'
@@ -433,6 +484,9 @@ export const useAudioPlayer = () => {
         },
         onend: async () => {
           isPlaying.value = false
+
+          // Release Wake Lock on end
+          releaseWakeLock()
 
           console.log('[HowlerPlayer] Triggering handleAudioEnd()')
 
@@ -448,6 +502,10 @@ export const useAudioPlayer = () => {
         },
         onstop: () => {
           isPlaying.value = false
+
+          // Release Wake Lock on stop
+          releaseWakeLock()
+
           console.log('[HowlerPlayer] Playback stopped')
         },
         onplayerror: (id, playError) => {
@@ -851,6 +909,8 @@ export const useAudioPlayer = () => {
       currentHowl.value = null
       soundId.value = null
     }
+    // Ensure wake lock is released on cleanup
+    releaseWakeLock()
   }
 
   // Background/visibility state management for audio continuation
@@ -861,6 +921,12 @@ export const useAudioPlayer = () => {
     document.addEventListener('visibilitychange', () => {
       const isHidden = document.hidden
       console.log('[HowlerPlayer] Page visibility changed, hidden:', isHidden)
+
+      // Re-acquire wake lock if document becomes visible and we are still playing
+      if (!isHidden && isPlaying.value && !wakeLock) {
+        console.log('[WakeLock] Re-acquiring on visibility change')
+        acquireWakeLock()
+      }
 
       if (import.meta.client && 'mediaSession' in navigator) {
         // Ensure MediaSession stays active when page is hidden
