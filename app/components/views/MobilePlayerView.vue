@@ -78,7 +78,6 @@
                     <div class="w-3 h-3 animate-spin rounded-full border border-amber-700 dark:border-amber-500 border-t-transparent" />
                     <span>
                       กำลังโหลดเสียง...
-                      <span v-if="networkType === 'cellular'" class="ml-1">(📱 เซลลูลาร์)</span>
                     </span>
                   </div>
                 </div>

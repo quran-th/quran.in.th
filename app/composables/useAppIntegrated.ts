@@ -46,6 +46,12 @@ export const useAppIntegrated = () => {
   const getCurrentSurahTotalDuration = () => {
     if (!audioPlayer.currentSurah.value) return '0:00'
 
+    // Use real Howler.js duration when available (more accurate than metadata)
+    if (audioPlayer.duration.value > 0) {
+      return audioPlayer.formatTime(audioPlayer.duration.value)
+    }
+
+    // Fallback to metadata duration when Howler.js duration not yet available
     const surah = getSurahById(audioPlayer.currentSurah.value)
     if (!surah || !surah.duration) return '0:00'
 
@@ -55,27 +61,33 @@ export const useAppIntegrated = () => {
   const getCurrentSurahDurationSeconds = () => {
     if (!audioPlayer.currentSurah.value) return 0
 
+    // Use real Howler.js duration when available (more accurate than metadata)
+    if (audioPlayer.duration.value > 0) {
+      return audioPlayer.duration.value
+    }
+
+    // Fallback to metadata duration when Howler.js duration not yet available
     const surah = getSurahById(audioPlayer.currentSurah.value)
     return surah?.duration || 0
   }
 
   const correctProgress = computed(() => {
-    const metadataDuration = getCurrentSurahDurationSeconds()
-    return metadataDuration > 0 ? (audioPlayer.currentTime.value / metadataDuration) * 100 : 0
+    const realDuration = getCurrentSurahDurationSeconds()
+    return realDuration > 0 ? (audioPlayer.currentTime.value / realDuration) * 100 : 0
   })
 
-  // Enhanced seek function with metadata duration
+  // Enhanced seek function with real audio duration
   const seekToClick = (event: MouseEvent) => {
     const target = event.currentTarget as HTMLElement
     const rect = target.getBoundingClientRect()
     const clickX = event.clientX - rect.left
     const percentage = (clickX / rect.width) * 100
 
-    // Use metadata duration for accurate seeking
-    const metadataDuration = getCurrentSurahDurationSeconds()
-    if (metadataDuration > 0) {
-      const seekTime = (percentage / 100) * metadataDuration
-      audioPlayer.seekTo(Math.max(0, Math.min(metadataDuration, seekTime)))
+    // Use real Howler.js duration for accurate seeking
+    const realDuration = getCurrentSurahDurationSeconds()
+    if (realDuration > 0) {
+      const seekTime = (percentage / 100) * realDuration
+      audioPlayer.seekTo(Math.max(0, Math.min(realDuration, seekTime)))
     } else {
       // Fallback to original method
       audioPlayer.seekToProgress(Math.max(0, Math.min(100, percentage)))
@@ -344,7 +356,7 @@ export const useAppIntegrated = () => {
 
     // Reciter management
     availableReciters: computed(() => [
-      { id: "001", name: "บรรจง โซะมณี" },
+      { id: "001", name: "อ.บรรจง โซ๊ะมณี" },
       { id: "002", name: "อุมัร สุจิตวรรณศรี" }
     ])
   }

@@ -34,7 +34,7 @@
               <select
                 class="px-3 py-2 border border-[rgb(191,179,147)]/30 dark:border-[rgb(171,159,127)]/30 rounded-full bg-gradient-to-r from-[rgb(191,179,147)]/10 to-[rgb(171,159,127)]/10 dark:from-[rgb(35,32,48)] dark:to-[rgb(25,22,38)] text-slate-900 dark:text-[rgb(191,179,147)] text-sm appearance-none pr-8 shadow-sm hover:shadow-md transition-all"
                 :value="currentReciterId" @change="onDesktopReciterChange">
-                <option value="1">บรรจง โซะมณี</option>
+                <option value="1">อ.บรรจง โซ๊ะมณี</option>
                 <option value="2">อุมัร สุจิตวรรณศรี</option>
               </select>
               <UIcon name="i-heroicons-chevron-down" class="absolute right-2 top-1/2 transform -translate-y-1/2 w-4 h-4 text-[rgb(191,179,147)] dark:text-[rgb(171,159,127)] pointer-events-none" />
@@ -121,7 +121,6 @@
         <div v-else-if="isBuffering || isLoading" class="mt-6">
           <p class="text-blue-500 text-sm">
             กำลังโหลดเสียง...
-            <span v-if="networkType === 'cellular'" class="ml-1">(📱 เซลลูลาร์)</span>
           </p>
         </div>
       </div>

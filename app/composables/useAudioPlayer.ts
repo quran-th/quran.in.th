@@ -108,24 +108,41 @@ export const useAudioPlayer = () => {
   }
 
   // Background-aware mode handling for MediaSession
-  const handleBackgroundNext = () => {
+  const handleBackgroundNext = async () => {
     console.log('[MediaSession] Background next track triggered, mode:', playerMode.value)
-    switch (playerMode.value) {
-      case 'shuffle':
-        playRandomSurah()
-        break
-      case 'autoNext':
-        playNextSurah()
-        break
-      case 'loop':
-        seekTo(0)
-        play()
-        break
-      case 'none':
-      default:
-        // Default to next surah for better UX
-        playNextSurah()
-        break
+
+    // Update MediaSession state to indicate processing
+    if (import.meta.client && 'mediaSession' in navigator) {
+      navigator.mediaSession.playbackState = 'playing'
+    }
+
+    try {
+      switch (playerMode.value) {
+        case 'shuffle':
+          console.log('[MediaSession] Executing shuffle mode')
+          await playRandomSurah()
+          break
+        case 'autoNext':
+          console.log('[MediaSession] Executing autoNext mode')
+          await playNextSurah()
+          break
+        case 'loop':
+          console.log('[MediaSession] Executing loop mode')
+          seekTo(0)
+          await play()
+          break
+        case 'none':
+        default:
+          console.log('[MediaSession] Default: playing next surah')
+          await playNextSurah()
+          break
+      }
+    } catch (error) {
+      console.error('[MediaSession] Background progression failed:', error)
+      // Update MediaSession to indicate error/pause state
+      if (import.meta.client && 'mediaSession' in navigator) {
+        navigator.mediaSession.playbackState = 'paused'
+      }
     }
   }
 
@@ -414,12 +431,19 @@ export const useAudioPlayer = () => {
 
           console.log('[HowlerPlayer] Playback paused')
         },
-        onend: () => {
+        onend: async () => {
           isPlaying.value = false
-          // Only trigger next surah if playback ended near the actual end
-          if (duration.value > 0 && Math.abs(duration.value - currentTime.value) < 2) {
-            handleAudioEnd()
+
+          console.log('[HowlerPlayer] Triggering handleAudioEnd()')
+
+          // CRITICAL: Update MediaSession playbackState BEFORE calling handleAudioEnd
+          // This tells the OS that the track ended and triggers background auto-progression
+          if (import.meta.client && 'mediaSession' in navigator) {
+            navigator.mediaSession.playbackState = 'paused'
           }
+
+          await handleAudioEnd()
+
           console.log('[HowlerPlayer] Playback ended')
         },
         onstop: () => {
@@ -625,52 +649,42 @@ export const useAudioPlayer = () => {
     seekTo(newTime)
   }
 
-  // Handle audio end with new player modes
-  const handleAudioEnd = () => {
+  // Handle audio end with new player modes (supports both foreground and background)
+  const handleAudioEnd = async () => {
     console.log('[HowlerPlayer] Audio ended, player mode:', playerMode.value)
 
-    // Update MediaSession state for background handling
-    if (import.meta.client && 'mediaSession' in navigator) {
-      navigator.mediaSession.playbackState = 'paused'
-    }
+    // For background compatibility: Use MediaSession nexttrack for auto-progression
+    // This ensures auto-progression works even when page is backgrounded/minimized
+    const needsAutoProgression = ['loop', 'shuffle', 'autoNext'].includes(playerMode.value)
 
-    switch (playerMode.value) {
-      case 'loop':
-        console.log('[HowlerPlayer] Loop mode: restarting current surah')
-        seekTo(0)
-        play()
-        break
-
-      case 'shuffle':
-        console.log('[HowlerPlayer] Shuffle mode: playing random surah')
-        playRandomSurah()
-        break
-
-      case 'autoNext':
-        console.log('[HowlerPlayer] AutoNext mode: playing next surah')
-        playNextSurah()
-        break
-
-      case 'none':
-      default:
-        console.log('[HowlerPlayer] No auto-progression mode active')
-        // Update MediaSession to none state
-        if (import.meta.client && 'mediaSession' in navigator) {
-          navigator.mediaSession.playbackState = 'none'
-        }
-        break
+    if (needsAutoProgression) {
+      console.log('[HowlerPlayer] Auto-progression needed, calling handleBackgroundNext for background compatibility')
+      // Use the MediaSession-compatible handler which works in background
+      await handleBackgroundNext()
+    } else {
+      console.log('[HowlerPlayer] No auto-progression mode active')
+      // Update MediaSession to indicate no further action
+      if (import.meta.client && 'mediaSession' in navigator) {
+        navigator.mediaSession.playbackState = 'none'
+      }
     }
   }
 
   // Play random surah for shuffle mode
   const playRandomSurah = async () => {
-    if (!currentReciter.value) return
+    console.log('[HowlerPlayer] playRandomSurah called')
+    if (!currentReciter.value) {
+      console.log('[HowlerPlayer] playRandomSurah: No current reciter')
+      return
+    }
 
     // Generate random surah ID (1-114), excluding current surah
     let randomSurahId
     do {
       randomSurahId = Math.floor(Math.random() * 114) + 1
     } while (randomSurahId === currentSurah.value)
+
+    console.log('[HowlerPlayer] playRandomSurah: Selected surah', randomSurahId)
 
     try {
       await loadAudio(randomSurahId, currentReciter.value)
@@ -694,18 +708,23 @@ export const useAudioPlayer = () => {
     if (!surahs.length) return null
 
     const randomIndex = Math.floor(Math.random() * surahs.length)
-    const selectedSurah = surahs[randomIndex]
+    const selectedSurahId = surahs[randomIndex]?.id ?? 1
 
-    console.log(`🎲 No current surah found - selecting random surah: ${selectedSurah.id} from ${surahs.length} available surahs`)
+    console.log(`🎲 No current surah found - selecting random surah: ${selectedSurahId} from ${surahs.length} available surahs`)
 
-    return selectedSurah.id
+    return selectedSurahId
   }
 
   // Play next sequential surah
   const playNextSurah = async () => {
-    if (!currentSurah.value || !currentReciter.value) return
+    console.log('[HowlerPlayer] playNextSurah called')
+    if (!currentSurah.value || !currentReciter.value) {
+      console.log('[HowlerPlayer] playNextSurah: Missing current surah or reciter')
+      return
+    }
 
     const nextSurahId = currentSurah.value + 1
+    console.log('[HowlerPlayer] playNextSurah: Next surah ID', nextSurahId)
 
     // If we've reached the end (Surah 114), restart from Surah 1
     const targetSurahId = nextSurahId > 114 ? 1 : nextSurahId
@@ -834,10 +853,45 @@ export const useAudioPlayer = () => {
     }
   }
 
-  // Initialize MediaSession on client
+  // Background/visibility state management for audio continuation
+  const setupVisibilityHandling = () => {
+    if (!import.meta.client) return
+
+    // Handle page visibility changes for background audio
+    document.addEventListener('visibilitychange', () => {
+      const isHidden = document.hidden
+      console.log('[HowlerPlayer] Page visibility changed, hidden:', isHidden)
+
+      if (import.meta.client && 'mediaSession' in navigator) {
+        // Ensure MediaSession stays active when page is hidden
+        if (isHidden && isPlaying.value) {
+          console.log('[HowlerPlayer] Page hidden while playing, ensuring MediaSession active')
+          navigator.mediaSession.playbackState = 'playing'
+        }
+      }
+    })
+
+    // Handle page lifecycle events for better mobile compatibility
+    window.addEventListener('pagehide', () => {
+      console.log('[HowlerPlayer] Page hide event - maintaining audio state')
+      if (isPlaying.value && import.meta.client && 'mediaSession' in navigator) {
+        navigator.mediaSession.playbackState = 'playing'
+      }
+    })
+
+    window.addEventListener('pageshow', () => {
+      console.log('[HowlerPlayer] Page show event - syncing audio state')
+      if (isPlaying.value && import.meta.client && 'mediaSession' in navigator) {
+        navigator.mediaSession.playbackState = 'playing'
+      }
+    })
+  }
+
+  // Initialize MediaSession and background handling on client
   onMounted(() => {
     if (import.meta.client) {
       initMediaSession()
+      setupVisibilityHandling()
     }
   })
 

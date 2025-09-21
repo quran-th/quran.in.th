@@ -4,7 +4,7 @@ export const reciters: Reciter[] = [
   {
     id: 1,
     reciter_id: 1, // This maps to directory "001" 
-    name: 'บรรจง โซะมณี',
+    name: 'อ.บรรจง โซ๊ะมณี',
     translatedName: 'Bancheong Somanee',
     style: 'Thai Translation',
     styleDescription: 'แปลภาษาไทย',

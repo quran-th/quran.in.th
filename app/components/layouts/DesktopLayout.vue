@@ -25,7 +25,7 @@
                   <select
                     class="px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 text-sm"
                     :value="currentReciterId" @change="onDesktopReciterChange">
-                    <option value="1">บรรจง โซะมณี</option>
+                    <option value="1">อ.บรรจง โซ๊ะมณี</option>
                     <option value="2">อุมัร สุจิตวรรณศรี</option>
                   </select>
                 </div>
