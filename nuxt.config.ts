@@ -1,4 +1,9 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
+import { readFileSync } from 'fs'
+
+// Read package.json for version info
+const packageJson = JSON.parse(readFileSync('./package.json', 'utf-8'))
+
 export default defineNuxtConfig({
   compatibilityDate: '2025-07-15',
   devtools: { enabled: true },
@@ -198,7 +203,11 @@ export default defineNuxtConfig({
     // Public keys (exposed to client-side)
     public: {
       // Client determines audio source via environment
-      useLocalAudio: process.env.NODE_ENV === 'development' ? true : (process.env.USE_LOCAL_AUDIO === 'true')
+      useLocalAudio: process.env.NODE_ENV === 'development' ? true : (process.env.USE_LOCAL_AUDIO === 'true'),
+
+      // Build-time app information
+      appVersion: packageJson.version,
+      buildTime: new Date().toISOString()
     }
   }
 })
