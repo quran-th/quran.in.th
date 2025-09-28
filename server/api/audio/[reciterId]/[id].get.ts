@@ -1,3 +1,14 @@
+interface R2BucketLike {
+  get(key: string, options?: { range?: { offset: number; length?: number } }): Promise<{
+    body?: ReadableStream
+    size?: number
+    writeHttpMetadata?: (headers: Record<string, string>) => void
+  } | null>
+  head(key: string): Promise<{
+    size?: number
+  } | null>
+}
+
 export default defineEventHandler(async (event) => {
   // Enhanced CORS for Howler.js compatibility
   if (event.node.req.method === 'OPTIONS') {
@@ -73,7 +84,7 @@ export default defineEventHandler(async (event) => {
   }
 
   // Production mode: R2 streaming with proper HTTP Range request support
-  const bucket = env.AUDIO_BUCKET
+  const bucket = env.AUDIO_BUCKET as R2BucketLike
   if (!bucket) {
     throw createError({ statusCode: 503, statusMessage: 'Audio service unavailable' })
   }
@@ -107,23 +118,29 @@ export default defineEventHandler(async (event) => {
         throw createError({ statusCode: 404, statusMessage: 'Audio file not found' })
       }
       
-      const totalSize = fullObject.size
+      const totalSize = fullObject.size || 0
+      if (totalSize === 0) {
+        throw createError({ statusCode: 404, statusMessage: 'Audio file size unavailable' })
+      }
       const actualEnd = end !== undefined ? Math.min(end, totalSize - 1) : totalSize - 1
       
       // Validate range
       if (start >= totalSize || (end !== undefined && start > end)) {
-        throw createError({ 
-          statusCode: 416, 
-          statusMessage: 'Requested Range Not Satisfiable',
-          headers: {
-            'Content-Range': `bytes */${totalSize}`
-          }
-        })
+        setResponseStatus(event, 416, 'Requested Range Not Satisfiable')
+        setResponseHeader(event, 'Content-Range', `bytes */${totalSize}`)
+        return new Response(null, { status: 416 })
       }
       
       // Build response headers for partial content with Howler.js optimization
       const headers = new Headers()
-      object.writeHttpMetadata(headers)
+      if (object.writeHttpMetadata) {
+        const headersRecord: Record<string, string> = {}
+        object.writeHttpMetadata(headersRecord)
+        // Copy the headers from the record to Headers
+        Object.entries(headersRecord).forEach(([key, value]) => {
+          headers.set(key, value)
+        })
+      }
       
       headers.set('Content-Type', 'audio/ogg')
       headers.set('Accept-Ranges', 'bytes')
@@ -153,7 +170,14 @@ export default defineEventHandler(async (event) => {
       
       // Build response headers for full file with Howler.js optimization
       const headers = new Headers()
-      object.writeHttpMetadata(headers)
+      if (object.writeHttpMetadata) {
+        const headersRecord: Record<string, string> = {}
+        object.writeHttpMetadata(headersRecord)
+        // Copy the headers from the record to Headers
+        Object.entries(headersRecord).forEach(([key, value]) => {
+          headers.set(key, value)
+        })
+      }
       
       headers.set('Content-Type', 'audio/ogg')
       headers.set('Accept-Ranges', 'bytes')

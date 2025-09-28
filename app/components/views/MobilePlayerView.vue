@@ -135,8 +135,8 @@
             <!-- Previous Surah -->
             <button
               class="w-14 h-14 rounded-full flex items-center justify-center text-slate-600 dark:text-slate-400 transition-all hover:text-slate-800 dark:hover:text-slate-200 active:scale-95"
-              :disabled="currentSurah <= 1"
-              :class="{ 'opacity-50': currentSurah <= 1 }"
+              :disabled="(currentSurah || 0) <= 1"
+              :class="{ 'opacity-50': (currentSurah || 0) <= 1 }"
               @click="playPreviousSurah"
             >
               <UIcon name="i-ri-skip-back-fill" class="w-8 h-8" />
@@ -162,8 +162,8 @@
             <!-- Next Surah -->
             <button
               class="w-14 h-14 rounded-full flex items-center justify-center text-slate-600 dark:text-slate-400 transition-all hover:text-slate-800 dark:hover:text-slate-200 active:scale-95"
-              :disabled="currentSurah >= 114"
-              :class="{ 'opacity-50': currentSurah >= 114 }"
+              :disabled="(currentSurah || 0) >= 114"
+              :class="{ 'opacity-50': (currentSurah || 0) >= 114 }"
               @click="playNextSurah"
             >
               <UIcon name="i-ri-skip-forward-fill" class="w-8 h-8" />
@@ -277,7 +277,7 @@ const {
   currentSurah,
   error,
   isBuffering,
-  networkType,
+  networkType: _networkType,
 
   // Player configuration
   shufflePlay,

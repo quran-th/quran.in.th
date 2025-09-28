@@ -16,7 +16,7 @@
       <div class="flex items-center justify-between">
         <span class="text-sm text-gray-600 dark:text-gray-400">Service Worker</span>
         <UBadge
-          :color="isServiceWorkerReady ? 'green' : 'red'"
+          :color="isServiceWorkerReady ? 'success' : 'error'"
           variant="soft"
         >
           {{ isServiceWorkerReady ? 'Active' : 'Inactive' }}
@@ -60,7 +60,7 @@
         <UButton
           size="sm"
           variant="outline"
-          color="orange"
+          color="warning"
           @click="updateServiceWorker"
         >
           Update SW
@@ -69,7 +69,7 @@
         <UButton
           size="sm"
           variant="outline"
-          color="red"
+          color="error"
           @click="clearCaches"
         >
           Clear Cache

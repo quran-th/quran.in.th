@@ -196,7 +196,7 @@ const lastAttemptedSurahId = ref<number | null>(null)
 
 // Template refs
 const surahListContainer = ref<HTMLElement>()
-const currentSurahElement = ref<HTMLElement>()
+const _currentSurahElement = ref<HTMLElement>()
 
 // Events
 const emit = defineEmits<{

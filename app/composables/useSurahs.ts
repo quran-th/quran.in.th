@@ -1,4 +1,4 @@
-import type { Surah } from '~/types/quran'
+import type { Surah, SurahApiResponse, SurahApiData } from '~/types/quran'
 
 export const useSurahs = () => {
   const surahsData = useState<Surah[]>('surahs', () => [])
@@ -12,31 +12,26 @@ export const useSurahs = () => {
       error.value = null
 
       // Load surahs for specific reciter from API
-      const response = await $fetch<{
-        reciterId: string,
-        surahs: any[],
-        total: number
-      }>(`/api/surahs/${reciterId}`)
+      const response = await $fetch<SurahApiResponse>(`/api/surahs/${reciterId}`)
 
       // Convert API response to Surah format
-      surahsData.value = response.surahs.map((data: any) => ({
+      surahsData.value = response.surahs.map((data: SurahApiData) => ({
         id: data.id,
         name: data.name || data.thaiName || `Surah ${data.id}`,
         thaiName: data.thaiName || data.name || `Surah ${data.id}`,
         arabicName: data.thaiName || data.name || `Surah ${data.id}`,
         englishName: data.englishName || getEnglishSurahName(data.id),
         revelationType: data.revelationType || getSurahRevelationType(data.id),
-        versesCount: data.versesCount || data.verseCount || getSurahVersesCount(data.id),
+        versesCount: data.versesCount || getSurahVersesCount(data.id),
         order: data.id,
         // Audio metadata
         duration: data.duration,
         fileSize: data.fileSize,
-        bitRate: data.bitRate || data.bitrate,
+        bitRate: data.bitRate,
         format: data.format,
         codec: data.codec,
         originalFilename: data.originalFilename,
-        newFilename: data.newFilename || data.filename,
-        slug: data.slug
+        newFilename: data.newFilename
       })).sort((a, b) => a.id - b.id) // Sort by surah ID
 
       currentReciterId.value = reciterId

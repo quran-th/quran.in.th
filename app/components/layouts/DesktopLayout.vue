@@ -179,7 +179,7 @@ const {
   currentReciterId,
 
   // Computed
-  currentReciterName,
+  currentReciterName: _currentReciterName,
   getCurrentReciterName,
   correctProgress,
 
@@ -187,7 +187,7 @@ const {
   isLargePlayerMode,
 
   // Methods
-  playFromHero,
+  playFromHero: _playFromHero,
   previousVerse,
   nextVerse,
   togglePlay,

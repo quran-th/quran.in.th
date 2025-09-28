@@ -11,9 +11,9 @@ export const useAppIntegrated = () => {
   const { surahs, getSurahById, formatDuration, loadSurahs } = useSurahs()
 
   // UI state management - use existing composables
-  const { isDark, toggleDarkMode } = useThemeActions()
-  const { isMobile } = useResponsiveState()
-  const { isLargePlayerMode, togglePlayerMode } = usePlayerModeActions()
+  const { isDark: _isDark, toggleDarkMode } = useThemeActions()
+  const { isMobile: _isMobile } = useResponsiveState()
+  const { isLargePlayerMode: _isLargePlayerMode, togglePlayerMode } = usePlayerModeActions()
   const { selectedSurahValue, setSelectedSurah } = useSelectionState()
 
   // Current reciter state from existing composable
@@ -297,7 +297,7 @@ export const useAppIntegrated = () => {
   }
 
   // Set up auto-play metadata callback for background MediaSession updates
-  audioPlayer.setAutoPlayMetadataCallback((surahId: number, reciterId: number) => {
+  audioPlayer.setAutoPlayMetadataCallback((surahId: number, _reciterId: number) => {
     const surah = getSurahById(surahId)
     if (surah) {
       const surahDisplayName = `ซูเราะฮฺ ${surah.thaiName}`
@@ -322,6 +322,7 @@ export const useAppIntegrated = () => {
     // Reciter state
     currentReciterId,
     currentReciterName,
+    getCurrentReciterName,
 
     // Data
     surahs,

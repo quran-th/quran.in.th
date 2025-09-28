@@ -1,5 +1,5 @@
 import { Howl } from 'howler'
-import type { VerseTiming, AudioFile, Surah } from '~/types/quran'
+import type { VerseTiming, AudioFile, Surah, AudioMetadata } from '~/types/quran'
 import { useLocalStorage } from './useLocalStorage'
 
 export const useAudioPlayer = () => {
@@ -57,8 +57,8 @@ export const useAudioPlayer = () => {
       // Set volume and rate
       currentHowl.value.volume(volume.value / 100)
       currentHowl.value.rate(playbackRate.value)
-    } catch (error) {
-      console.error('[HowlerPlayer] Error playing audio:', error)
+    } catch (err) {
+      console.error('[HowlerPlayer] Error playing audio:', err)
       error.value = 'เกิดข้อผิดพลาดในการเล่นเสียง กรุณาลองใหม่'
       isBuffering.value = false
     }
@@ -97,8 +97,9 @@ export const useAudioPlayer = () => {
           console.log('[WakeLock] Released by browser')
           wakeLock = null
         })
-      } catch (err: any) {
-        console.error(`[WakeLock] Failed to acquire: ${err.name}, ${err.message}`)
+      } catch (err: unknown) {
+        const error = err as Error
+        console.error(`[WakeLock] Failed to acquire: ${error.name}, ${error.message}`)
         wakeLock = null
       }
     }
@@ -110,8 +111,9 @@ export const useAudioPlayer = () => {
         await wakeLock.release()
         console.log('[WakeLock] Released programmatically')
         wakeLock = null
-      } catch (err: any) {
-        console.error(`[WakeLock] Failed to release: ${err.name}, ${err.message}`)
+      } catch (err: unknown) {
+        const error = err as Error
+        console.error(`[WakeLock] Failed to release: ${error.name}, ${error.message}`)
       }
     }
   }
@@ -135,7 +137,8 @@ export const useAudioPlayer = () => {
     if (!currentVerseTiming.value) return currentVerse.value
 
     const verseKey = currentVerseTiming.value.verse_key
-    const verseNumber = parseInt(verseKey.split(':')[1])
+    const verseParts = verseKey.split(':')
+    const verseNumber = verseParts[1] ? parseInt(verseParts[1]) : currentVerse.value
     return verseNumber
   })
 
@@ -372,7 +375,7 @@ export const useAudioPlayer = () => {
   }
 
   // Load audio metadata from reciter-specific surah data via API
-  const loadAudioMetadata = async (surahId: number, reciterId: number): Promise<Record<string, unknown> | null> => {
+  const loadAudioMetadata = async (surahId: number, reciterId: number): Promise<AudioMetadata | null> => {
     try {
       // Get metadata from the surahs API endpoint
       const response = await $fetch<{
@@ -416,10 +419,10 @@ export const useAudioPlayer = () => {
         audioFile.value = {
           id: surahId,
           chapter_id: surahId,
-          file_size: (metadata as any).fileSize || 0,
-          format: (metadata as any).format || 'ogg',
+          file_size: metadata.fileSize || 0,
+          format: metadata.format || 'ogg',
           audio_url: '',  // Will be set below
-          duration: (metadata as any).duration || 0,
+          duration: metadata.duration || 0,
           verse_timings: [] // Empty for now - verse timings not available in current metadata
         }
       }
@@ -583,8 +586,8 @@ export const useAudioPlayer = () => {
         requestAnimationFrame(updateTime)
       }
 
-    } catch (error) {
-      console.error('[HowlerPlayer] Error loading audio:', error)
+    } catch (err) {
+      console.error('[HowlerPlayer] Error loading audio:', err)
       error.value = 'เกิดข้อผิดพลาดในการโหลดเสียง กรุณาลองใหม่'
       isLoading.value = false
 
@@ -734,8 +737,8 @@ export const useAudioPlayer = () => {
       if (onAutoPlayMetadataUpdate) {
         onAutoPlayMetadataUpdate(randomSurahId, currentReciter.value)
       }
-    } catch (error) {
-      console.error('[HowlerPlayer] Error loading random surah:', error)
+    } catch (err) {
+      console.error('[HowlerPlayer] Error loading random surah:', err)
       error.value = 'Failed to load random surah'
     }
   }
@@ -777,8 +780,8 @@ export const useAudioPlayer = () => {
       if (onAutoPlayMetadataUpdate) {
         onAutoPlayMetadataUpdate(targetSurahId, currentReciter.value)
       }
-    } catch (error) {
-      console.error('[HowlerPlayer] Error loading next surah:', error)
+    } catch (err) {
+      console.error('[HowlerPlayer] Error loading next surah:', err)
       error.value = 'Failed to load next surah'
     }
   }
@@ -803,8 +806,8 @@ export const useAudioPlayer = () => {
       if (onAutoPlayMetadataUpdate) {
         onAutoPlayMetadataUpdate(targetSurahId, currentReciter.value)
       }
-    } catch (error) {
-      console.error('[HowlerPlayer] Error loading previous surah:', error)
+    } catch (err) {
+      console.error('[HowlerPlayer] Error loading previous surah:', err)
       error.value = 'Failed to load previous surah'
     }
   }

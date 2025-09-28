@@ -53,7 +53,8 @@ export default defineNuxtConfig({
       prerender: true,
       headers: {
         'Cache-Control': 'no-cache, must-revalidate, s-maxage=0',
-        'ETag': true // Enable conditional requests for efficiency
+        'Pragma': 'no-cache', // HTTP/1.0 compatibility
+        'Expires': '0' // Legacy browsers
       }
     },
     // Manifest - prevent caching for PWA updates

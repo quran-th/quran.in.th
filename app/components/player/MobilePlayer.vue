@@ -148,7 +148,7 @@ const {
   isLastVerse,
   error,
   isBuffering,
-  networkType,
+  networkType: _networkType,
 
   // Player configuration
   shufflePlay,
