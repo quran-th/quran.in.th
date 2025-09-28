@@ -1,4 +1,4 @@
-// Import JSON data directly - works in both Node.js and Cloudflare Workers
+// Import JSON data directly
 import surah001 from '~/data/surah/001.json'
 import surah002 from '~/data/surah/002.json'
 
@@ -31,7 +31,7 @@ export default defineEventHandler(async (event) => {
       // Return error for unsupported reciter instead of fallback
       throw createError({
         statusCode: 404,
-        statusMessage: `Reciter ${reciterId} not found. Available reciters: 001, 002`
+        statusMessage: `Reciter ${reciterId} not found.`
       })
     }
 

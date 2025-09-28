@@ -1,0 +1,158 @@
+name: Semantic Release and Deploy
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  issues: write
+  pull-requests: write
+  id-token: write
+
+jobs:
+  test:
+    name: Test and Lint
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run linter
+        run: npm run lint
+
+      - name: Run type check
+        run: npm run typecheck
+
+      - name: Run build test
+        run: npm run build
+
+  release:
+    name: Semantic Release
+    needs: test
+    runs-on: ubuntu-latest
+    outputs:
+      released: ${{ steps.semantic.outputs.new_release_published }}
+      version: ${{ steps.semantic.outputs.new_release_version }}
+      tag: ${{ steps.semantic.outputs.new_release_git_tag }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build for production
+        run: npm run build
+
+      - name: Semantic Release
+        id: semantic
+        uses: cycjimmy/semantic-release-action@v4
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          semantic_version: 22
+          extra_plugins: |
+            @semantic-release/changelog@6.0.3
+            @semantic-release/git@10.0.1
+
+      - name: Upload build artifacts
+        if: steps.semantic.outputs.new_release_published == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-artifacts-${{ steps.semantic.outputs.new_release_version }}
+          path: |
+            .output/
+            dist/
+          retention-days: 30
+
+  deploy:
+    name: Deploy to Cloudflare
+    needs: [test, release]
+    if: needs.release.outputs.released == 'true'
+    runs-on: ubuntu-latest
+    environment:
+      name: production
+      url: https://quran.in.th
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.release.outputs.tag }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build for production
+        run: npm run build
+
+      - name: Deploy to Cloudflare Workers
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: deploy
+          workingDirectory: '.'
+
+      - name: Invalidate Cloudflare Cache
+        if: success()
+        run: |
+          curl -X POST "https://api.cloudflare.com/client/v4/zones/${{ secrets.CLOUDFLARE_ZONE_ID }}/purge_cache" \
+            -H "Authorization: Bearer ${{ secrets.CLOUDFLARE_API_TOKEN }}" \
+            -H "Content-Type: application/json" \
+            --data '{"purge_everything":true}'
+
+      - name: Update deployment status
+        if: success()
+        run: |
+          echo "🚀 Successfully deployed version ${{ needs.release.outputs.version }} to production"
+          echo "📦 Release: https://github.com/${{ github.repository }}/releases/tag/${{ needs.release.outputs.tag }}"
+          echo "🌐 Website: https://quran.in.th"
+
+  notify:
+    name: Deployment Notification
+    needs: [release, deploy]
+    if: always() && needs.release.outputs.released == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deployment Success
+        if: needs.deploy.result == 'success'
+        run: |
+          echo "✅ Deployment completed successfully!"
+          echo "Version: ${{ needs.release.outputs.version }}"
+          echo "Release: https://github.com/${{ github.repository }}/releases/tag/${{ needs.release.outputs.tag }}"
+
+      - name: Deployment Failure
+        if: needs.deploy.result == 'failure'
+        run: |
+          echo "❌ Deployment failed for version ${{ needs.release.outputs.version }}"
+          echo "Please check the deployment logs and consider rolling back if necessary."
+          exit 1

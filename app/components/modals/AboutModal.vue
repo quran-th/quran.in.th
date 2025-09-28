@@ -54,8 +54,8 @@
 
             <!-- Description -->
             <p class="text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
-                พบปัญหาในการใช้งานหรือมีข้อเสนอแนะ <br />
-                ติดต่อได้ที่ Facebook Page: <br />
+                พบปัญหาในการใช้งานหรือมีข้อเสนอแนะ <br >
+                ติดต่อได้ที่ Facebook Page: <br >
                 <a
                 href="https://www.facebook.com/quran.in.th"
                 target="_blank"
