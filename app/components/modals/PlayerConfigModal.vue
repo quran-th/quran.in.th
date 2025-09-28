@@ -1,14 +1,17 @@
 <template>
   <!-- Player Configuration Modal -->
-  <div v-if="isOpen" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-end"
+  <div
+v-if="isOpen" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-end"
     @click="$emit('close')">
-    <div class="w-full bg-white dark:bg-slate-800 rounded-t-3xl max-h-[80vh] flex flex-col" :class="{
+    <div
+class="w-full bg-white dark:bg-slate-800 rounded-t-3xl max-h-[80vh] flex flex-col" :class="{
       'animate-slide-up': isOpen,
     }" @click.stop>
       <!-- Modal Header -->
       <div class="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
         <h3 class="text-xl font-semibold text-slate-800 dark:text-slate-100">ตั้งค่าเครื่องเล่น</h3>
-        <button class="w-8 h-8 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center"
+        <button
+class="w-8 h-8 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center"
           @click="$emit('close')">
           <UIcon name="i-heroicons-x-mark" class="w-5 h-5 text-slate-600 dark:text-slate-400" />
         </button>
@@ -18,15 +21,18 @@
       <div class="flex-1 p-6">
         <div class="space-y-4">
           <!-- Shuffle Play Option -->
-          <div class="flex items-center justify-between p-4 rounded-xl border border-gray-200 dark:border-gray-700 cursor-pointer transition-all hover:bg-gray-50 dark:hover:bg-slate-700"
+          <div
+class="flex items-center justify-between p-4 rounded-xl border border-gray-200 dark:border-gray-700 cursor-pointer transition-all hover:bg-gray-50 dark:hover:bg-slate-700"
             :class="{ 'bg-indigo-50 dark:bg-indigo-900/20 border-indigo-200 dark:border-indigo-800': shufflePlay }"
             @click="toggleShufflePlay">
             <div class="flex items-center space-x-4">
-              <div class="w-12 h-12 rounded-full flex items-center justify-center"
+              <div
+class="w-12 h-12 rounded-full flex items-center justify-center"
                 :class="shufflePlay
                   ? 'bg-indigo-100 dark:bg-indigo-900/50'
                   : 'bg-gray-100 dark:bg-gray-700'">
-                <UIcon name="i-lucide-shuffle" class="w-6 h-6"
+                <UIcon
+name="i-lucide-shuffle" class="w-6 h-6"
                   :class="shufflePlay
                     ? 'text-indigo-600 dark:text-indigo-400'
                     : 'text-gray-600 dark:text-gray-400'" />
@@ -37,7 +43,8 @@
               </div>
             </div>
             <div class="flex items-center">
-              <div class="w-6 h-6 rounded-full border-2 flex items-center justify-center"
+              <div
+class="w-6 h-6 rounded-full border-2 flex items-center justify-center"
                 :class="shufflePlay
                   ? 'bg-indigo-600 border-indigo-600'
                   : 'border-gray-300 dark:border-gray-600'">
@@ -47,15 +54,18 @@
           </div>
 
           <!-- Loop Play Option -->
-          <div class="flex items-center justify-between p-4 rounded-xl border border-gray-200 dark:border-gray-700 cursor-pointer transition-all hover:bg-gray-50 dark:hover:bg-slate-700"
+          <div
+class="flex items-center justify-between p-4 rounded-xl border border-gray-200 dark:border-gray-700 cursor-pointer transition-all hover:bg-gray-50 dark:hover:bg-slate-700"
             :class="{ 'bg-indigo-50 dark:bg-indigo-900/20 border-indigo-200 dark:border-indigo-800': loopPlay }"
             @click="toggleLoopPlay">
             <div class="flex items-center space-x-4">
-              <div class="w-12 h-12 rounded-full flex items-center justify-center"
+              <div
+class="w-12 h-12 rounded-full flex items-center justify-center"
                 :class="loopPlay
                   ? 'bg-indigo-100 dark:bg-indigo-900/50'
                   : 'bg-gray-100 dark:bg-gray-700'">
-                <UIcon name="i-heroicons-arrow-path-rounded-square" class="w-6 h-6"
+                <UIcon
+name="i-heroicons-arrow-path-rounded-square" class="w-6 h-6"
                   :class="loopPlay
                     ? 'text-indigo-600 dark:text-indigo-400'
                     : 'text-gray-600 dark:text-gray-400'" />
@@ -66,7 +76,8 @@
               </div>
             </div>
             <div class="flex items-center">
-              <div class="w-6 h-6 rounded-full border-2 flex items-center justify-center"
+              <div
+class="w-6 h-6 rounded-full border-2 flex items-center justify-center"
                 :class="loopPlay
                   ? 'bg-indigo-600 border-indigo-600'
                   : 'border-gray-300 dark:border-gray-600'">
@@ -76,15 +87,18 @@
           </div>
 
           <!-- Auto Play Next Option -->
-          <div class="flex items-center justify-between p-4 rounded-xl border border-gray-200 dark:border-gray-700 cursor-pointer transition-all hover:bg-gray-50 dark:hover:bg-slate-700"
+          <div
+class="flex items-center justify-between p-4 rounded-xl border border-gray-200 dark:border-gray-700 cursor-pointer transition-all hover:bg-gray-50 dark:hover:bg-slate-700"
             :class="{ 'bg-indigo-50 dark:bg-indigo-900/20 border-indigo-200 dark:border-indigo-800': autoPlayNext }"
             @click="toggleAutoPlayNext">
             <div class="flex items-center space-x-4">
-              <div class="w-12 h-12 rounded-full flex items-center justify-center"
+              <div
+class="w-12 h-12 rounded-full flex items-center justify-center"
                 :class="autoPlayNext
                   ? 'bg-indigo-100 dark:bg-indigo-900/50'
                   : 'bg-gray-100 dark:bg-gray-700'">
-                <UIcon name="i-lucide-infinity" class="w-6 h-6"
+                <UIcon
+name="i-lucide-infinity" class="w-6 h-6"
                   :class="autoPlayNext
                     ? 'text-indigo-600 dark:text-indigo-400'
                     : 'text-gray-600 dark:text-gray-400'" />
@@ -95,7 +109,8 @@
               </div>
             </div>
             <div class="flex items-center">
-              <div class="w-6 h-6 rounded-full border-2 flex items-center justify-center"
+              <div
+class="w-6 h-6 rounded-full border-2 flex items-center justify-center"
                 :class="autoPlayNext
                   ? 'bg-indigo-600 border-indigo-600'
                   : 'border-gray-300 dark:border-gray-600'">

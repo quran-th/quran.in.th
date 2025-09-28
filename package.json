@@ -1,22 +1,27 @@
 {
 	"name": "nuxt-app",
 	"type": "module",
+	"version": "0.3.0",
 	"private": true,
 	"scripts": {
 		"build": "nuxt build",
 		"dev": "nuxt dev",
 		"dev:cf": "wrangler dev --x-remote-bindings",
 		"generate": "nuxt generate",
-		"preview": "npm run build && wrangler dev",
+		"preview": "npm run build && npx wrangler --cwd .output dev",
 		"postinstall": "nuxt prepare",
 		"deploy": "npm run build && wrangler deploy",
 		"cf-typegen": "wrangler types",
 		"lint": "eslint --ext .js,.ts,.vue .",
-		"lint:fix": "eslint --ext .js,.ts,.vue . --fix"
+		"lint:fix": "eslint --ext .js,.ts,.vue . --fix",
+		"typecheck": "nuxt typecheck",
+		"release": "semantic-release",
+		"release:dry": "semantic-release --dry-run"
 	},
 	"dependencies": {
 		"@nuxt/eslint": "^1.9.0",
 		"@nuxt/ui": "^3.3.3",
+		"@vite-pwa/nuxt": "^1.0.4",
 		"eslint": "^9.35.0",
 		"howler": "^2.2.4",
 		"nuxt": "^4.1.1",
@@ -24,10 +29,15 @@
 		"vue-router": "^4.5.1"
 	},
 	"devDependencies": {
+		"@commitlint/cli": "^18.6.1",
+		"@commitlint/config-conventional": "^18.6.2",
+		"@semantic-release/changelog": "^6.0.3",
+		"@semantic-release/git": "^10.0.1",
 		"@types/howler": "^2.2.12",
 		"@types/node": "^24.3.1",
 		"nitro-cloudflare-dev": "^0.2.2",
 		"nitropack": "^2.12.5",
+		"semantic-release": "^22.0.12",
 		"typescript": "^5.9.2",
 		"wrangler": "^4.34.0"
 	}

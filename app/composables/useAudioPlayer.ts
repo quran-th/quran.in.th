@@ -1,5 +1,5 @@
 import { Howl } from 'howler'
-import type { VerseTiming, AudioFile, Surah } from '~/types/quran'
+import type { VerseTiming, AudioFile, Surah, AudioMetadata } from '~/types/quran'
 import { useLocalStorage } from './useLocalStorage'
 
 export const useAudioPlayer = () => {
@@ -40,11 +40,34 @@ export const useAudioPlayer = () => {
   const soundId = useState<number | null>('player-soundId', () => null)
   const isBuffering = useState<boolean>('player-isBuffering', () => false)
 
+  // Screen Wake Lock sentinel
+  let wakeLock: WakeLockSentinel | null = null
+
   // Track last saved time to prevent excessive localStorage updates
   let lastSavedTime = 0
 
-  // Track playback session state
-  let isResumingFromPause = false
+  // Playback controls
+  const play = async () => {
+    if (!currentHowl.value) return
+
+    try {
+      isBuffering.value = true
+      soundId.value = currentHowl.value.play() as number
+
+      // Set volume and rate
+      currentHowl.value.volume(volume.value / 100)
+      currentHowl.value.rate(playbackRate.value)
+    } catch (err) {
+      console.error('[HowlerPlayer] Error playing audio:', err)
+      error.value = 'เกิดข้อผิดพลาดในการเล่นเสียง กรุณาลองใหม่'
+      isBuffering.value = false
+    }
+  }
+
+  const pause = () => {
+    if (!currentHowl.value) return
+    currentHowl.value.pause()
+  }
 
   // Network type detection (preserved from original)
   const networkType = ref<'cellular' | 'wifi' | 'unknown'>('unknown')
@@ -61,6 +84,38 @@ export const useAudioPlayer = () => {
     }
 
     return 'wifi'
+  }
+
+  // Screen Wake Lock management
+  const acquireWakeLock = async () => {
+    if (import.meta.client && 'wakeLock' in navigator) {
+      try {
+        wakeLock = await navigator.wakeLock.request('screen')
+        console.log('[WakeLock] Acquired')
+        // Handle release on visibility change (e.g., user switches tabs)
+        wakeLock.addEventListener('release', () => {
+          console.log('[WakeLock] Released by browser')
+          wakeLock = null
+        })
+      } catch (err: unknown) {
+        const error = err as Error
+        console.error(`[WakeLock] Failed to acquire: ${error.name}, ${error.message}`)
+        wakeLock = null
+      }
+    }
+  }
+
+  const releaseWakeLock = async () => {
+    if (import.meta.client && wakeLock) {
+      try {
+        await wakeLock.release()
+        console.log('[WakeLock] Released programmatically')
+        wakeLock = null
+      } catch (err: unknown) {
+        const error = err as Error
+        console.error(`[WakeLock] Failed to release: ${error.name}, ${error.message}`)
+      }
+    }
   }
 
   // Computed properties
@@ -82,7 +137,8 @@ export const useAudioPlayer = () => {
     if (!currentVerseTiming.value) return currentVerse.value
 
     const verseKey = currentVerseTiming.value.verse_key
-    const verseNumber = parseInt(verseKey.split(':')[1])
+    const verseParts = verseKey.split(':')
+    const verseNumber = verseParts[1] ? parseInt(verseParts[1]) : currentVerse.value
     return verseNumber
   })
 
@@ -93,36 +149,171 @@ export const useAudioPlayer = () => {
   const isFirstVerse = computed(() => currentTime.value <= 10)
   const isLastVerse = computed(() => currentTime.value >= (duration.value - 10))
 
-  // Initialize MediaSession API for native OS controls
+  // Platform detection for MediaSession API
+  const createPlatformDetector = () => {
+    if (!import.meta.client) return { isiOS: false, isAndroid: false, isSafari: false, isMobile: false, isPWA: false }
+
+    const userAgent = navigator.userAgent
+    return {
+      isiOS: /iPad|iPhone|iPod/.test(userAgent),
+      isAndroid: /Android/.test(userAgent),
+      isSafari: /Safari/.test(userAgent) && !/Chrome/.test(userAgent),
+      isMobile: /Mobi|Android/i.test(userAgent),
+      isPWA: window.matchMedia('(display-mode: standalone)').matches
+    }
+  }
+
+  // Background-aware mode handling for MediaSession
+  const handleBackgroundNext = async () => {
+    // Use Web Locks to prevent the browser from suspending the script during track transition
+    if (import.meta.client && 'locks' in navigator) {
+      await navigator.locks.request('audio-player-lock', async () => {
+        await executeNextTrackLogic()
+      })
+    } else {
+      // Fallback for browsers that don't support Web Locks
+      await executeNextTrackLogic()
+    }
+  }
+
+  const executeNextTrackLogic = async () => {
+    console.log('[MediaSession] Background next track triggered, mode:', playerMode.value)
+
+    // Update MediaSession state to indicate processing
+    if (import.meta.client && 'mediaSession' in navigator) {
+      navigator.mediaSession.playbackState = 'playing'
+    }
+
+    try {
+      switch (playerMode.value) {
+        case 'shuffle':
+          console.log('[MediaSession] Executing shuffle mode')
+          await playRandomSurah()
+          break
+        case 'autoNext':
+          console.log('[MediaSession] Executing autoNext mode')
+          await playNextSurah()
+          break
+        case 'loop':
+          console.log('[MediaSession] Executing loop mode')
+          seekTo(0)
+          await play()
+          break
+        case 'none':
+        default:
+          console.log('[MediaSession] Default: playing next surah')
+          await playNextSurah()
+          break
+      }
+    } catch (error) {
+      console.error('[MediaSession] Background progression failed:', error)
+      // Update MediaSession to indicate error/pause state
+      if (import.meta.client && 'mediaSession' in navigator) {
+        navigator.mediaSession.playbackState = 'paused'
+      }
+    }
+  }
+
+  const handleBackgroundPrevious = () => {
+    console.log('[MediaSession] Background previous track triggered, mode:', playerMode.value)
+    switch (playerMode.value) {
+      case 'shuffle':
+        playRandomSurah()
+        break
+      case 'autoNext':
+        playPreviousSurah()
+        break
+      case 'loop':
+        seekTo(0)
+        play()
+        break
+      case 'none':
+      default:
+        // Default to previous surah for better UX
+        playPreviousSurah()
+        break
+    }
+  }
+
+  // iOS-specific MediaSession setup (no seek + track navigation conflict)
+  const setupiOSMediaSession = () => {
+    const actionHandlers = [
+      ['play', () => play()],
+      ['pause', () => pause()],
+      ['nexttrack', handleBackgroundNext],
+      ['previoustrack', handleBackgroundPrevious]
+      // Note: No seek handlers due to iOS Safari conflict
+    ]
+
+    // Set handlers after audio starts playing (iOS requirement)
+    const setHandlersAfterPlay = () => {
+      for (const [action, handler] of actionHandlers) {
+        try {
+          navigator.mediaSession.setActionHandler(action as MediaSessionAction, handler as MediaSessionActionHandler)
+          console.log(`[MediaSession iOS] Set handler for ${action}`)
+        } catch (error) {
+          console.warn(`[MediaSession iOS] Action "${action}" not supported:`, error)
+        }
+      }
+    }
+
+    // Listen for playing event to set handlers (iOS timing fix)
+    if (currentHowl.value) {
+      currentHowl.value.once('play', setHandlersAfterPlay)
+    }
+
+    return setHandlersAfterPlay
+  }
+
+  // Standard MediaSession setup (Android/Desktop - full feature support)
+  const setupStandardMediaSession = () => {
+    const actionHandlers = [
+      ['play', () => play()],
+      ['pause', () => pause()],
+      ['nexttrack', handleBackgroundNext],
+      ['previoustrack', handleBackgroundPrevious],
+      ['seekbackward', (details: MediaSessionActionDetails) => {
+        const skipTime = details.seekOffset || 10
+        const newTime = Math.max(0, currentTime.value - skipTime)
+        seekTo(newTime)
+      }],
+      ['seekforward', (details: MediaSessionActionDetails) => {
+        const skipTime = details.seekOffset || 10
+        const newTime = Math.min(duration.value, currentTime.value + skipTime)
+        seekTo(newTime)
+      }],
+      ['seekto', (details: MediaSessionActionDetails) => {
+        if (details.seekTime !== undefined) {
+          seekTo(details.seekTime)
+        }
+      }]
+    ]
+
+    for (const [action, handler] of actionHandlers) {
+      try {
+        navigator.mediaSession.setActionHandler(action as MediaSessionAction, handler as MediaSessionActionHandler)
+        console.log(`[MediaSession Standard] Set handler for ${action}`)
+      } catch (error) {
+        console.warn(`[MediaSession Standard] Action "${action}" not supported:`, error)
+      }
+    }
+  }
+
+  // Initialize MediaSession API for native OS controls with platform-specific setup
   const initMediaSession = () => {
     if (!import.meta.client || !('mediaSession' in navigator)) return
 
-    // Set up media action handlers
-    navigator.mediaSession.setActionHandler('play', () => {
-      play()
-    })
+    const platform = createPlatformDetector()
+    console.log('[MediaSession] Detected platform:', platform)
 
-    navigator.mediaSession.setActionHandler('pause', () => {
-      pause()
-    })
-
-    navigator.mediaSession.setActionHandler('seekbackward', (details) => {
-      const skipTime = details.seekOffset || 10
-      const newTime = Math.max(0, currentTime.value - skipTime)
-      seekTo(newTime)
-    })
-
-    navigator.mediaSession.setActionHandler('seekforward', (details) => {
-      const skipTime = details.seekOffset || 10
-      const newTime = Math.min(duration.value, currentTime.value + skipTime)
-      seekTo(newTime)
-    })
-
-    navigator.mediaSession.setActionHandler('seekto', (details) => {
-      if (details.seekTime !== undefined) {
-        seekTo(details.seekTime)
-      }
-    })
+    if (platform.isiOS) {
+      console.log('[MediaSession] Using iOS-specific setup')
+      return setupiOSMediaSession()
+    } else {
+      console.log('[MediaSession] Using standard setup')
+      setupStandardMediaSession()
+      return null
+    }
   }
 
   // Update MediaSession metadata with cover image
@@ -184,7 +375,7 @@ export const useAudioPlayer = () => {
   }
 
   // Load audio metadata from reciter-specific surah data via API
-  const loadAudioMetadata = async (surahId: number, reciterId: number): Promise<Record<string, unknown> | null> => {
+  const loadAudioMetadata = async (surahId: number, reciterId: number): Promise<AudioMetadata | null> => {
     try {
       // Get metadata from the surahs API endpoint
       const response = await $fetch<{
@@ -202,7 +393,7 @@ export const useAudioPlayer = () => {
   }
 
   // Load and configure Howl for streaming large audio files
-  const loadAudio = async (surahId: number, reciterId: number, resumeFromPause = false) => {
+  const loadAudio = async (surahId: number, reciterId: number) => {
     try {
       // Cleanup previous Howl instance
       if (currentHowl.value) {
@@ -236,7 +427,7 @@ export const useAudioPlayer = () => {
         }
       }
 
-      // Get audio URL (handles dev/production environments)
+      // Get audio URL (handles dev/production environments)!
       const audioUrl = await getAudioUrl(surahId, reciterId)
 
       // Update the audio file URL
@@ -253,28 +444,25 @@ export const useAudioPlayer = () => {
       const howl = new Howl({
         src: [audioUrl],
         html5: true, // CRITICAL: Use HTML5 Audio for large files and streaming
-        preload: networkType.value === 'cellular' ? 'metadata' : 'auto',
+        preload: networkType.value === 'cellular' ? 'metadata' : true,
         format: ['ogg', 'mp3'], // Explicit format support
         onload: () => {
           duration.value = howl.duration()
           isLoading.value = false
 
-          // Handle time restoration based on context
+          // Handle time restoration
           const savedTime = initialState.currentTime || 0
           const savedSurah = initialState.currentSurah
           const currentSurahId = currentSurah.value
 
-          if (resumeFromPause && savedTime > 0 && savedTime < duration.value && savedSurah === currentSurahId) {
-            // Scenario 2: Resuming from pause - restore saved position
+          // If loading the same surah that was last played, seek to the saved position
+          if (savedSurah === currentSurahId && savedTime > 0 && savedTime < duration.value) {
             howl.seek(savedTime)
             currentTime.value = savedTime
           } else {
-            // Scenario 1: Loading saved surah from localStorage - start from beginning
+            // Otherwise, start from the beginning
             howl.seek(0)
             currentTime.value = 0
-
-            // Reset saved time for new playback session
-            localStorage.updateCurrentState(currentSurahId, 0)
           }
 
           console.log('[HowlerPlayer] Audio loaded successfully, duration:', duration.value)
@@ -288,6 +476,9 @@ export const useAudioPlayer = () => {
           isPlaying.value = true
           isBuffering.value = false
 
+          // Acquire Wake Lock to prevent sleep during playback
+          acquireWakeLock()
+
           // Update MediaSession
           if (import.meta.client && 'mediaSession' in navigator) {
             navigator.mediaSession.playbackState = 'playing'
@@ -299,23 +490,45 @@ export const useAudioPlayer = () => {
         onpause: () => {
           isPlaying.value = false
 
+          // Release Wake Lock on pause
+          releaseWakeLock()
+
           // Update MediaSession
           if (import.meta.client && 'mediaSession' in navigator) {
             navigator.mediaSession.playbackState = 'paused'
           }
 
+          // Save current state to localStorage as the single source of truth on pause
+          if (currentSurah.value) {
+            localStorage.updateCurrentState(currentSurah.value, currentTime.value)
+          }
+
           console.log('[HowlerPlayer] Playback paused')
         },
-        onend: () => {
+        onend: async () => {
           isPlaying.value = false
-          // Only trigger next surah if playback ended near the actual end
-          if (duration.value > 0 && Math.abs(duration.value - currentTime.value) < 2) {
-            handleAudioEnd()
+
+          // Release Wake Lock on end
+          releaseWakeLock()
+
+          console.log('[HowlerPlayer] Triggering handleAudioEnd()')
+
+          // CRITICAL: Update MediaSession playbackState BEFORE calling handleAudioEnd
+          // This tells the OS that the track ended and triggers background auto-progression
+          if (import.meta.client && 'mediaSession' in navigator) {
+            navigator.mediaSession.playbackState = 'paused'
           }
+
+          await handleAudioEnd()
+
           console.log('[HowlerPlayer] Playback ended')
         },
         onstop: () => {
           isPlaying.value = false
+
+          // Release Wake Lock on stop
+          releaseWakeLock()
+
           console.log('[HowlerPlayer] Playback stopped')
         },
         onplayerror: (id, playError) => {
@@ -332,6 +545,14 @@ export const useAudioPlayer = () => {
 
       // Store the Howl instance
       currentHowl.value = howl
+
+      // Reinitialize MediaSession handlers for new audio (especially important for iOS)
+      const platform = createPlatformDetector()
+      if (platform.isiOS) {
+        // For iOS, set up handlers to be applied when audio starts playing
+        setupiOSMediaSession()
+      }
+      // Note: For non-iOS platforms, handlers are already set during initMediaSession
 
       // Reset saved time tracker for new audio
       lastSavedTime = 0
@@ -365,57 +586,14 @@ export const useAudioPlayer = () => {
         requestAnimationFrame(updateTime)
       }
 
-    } catch (error) {
-      console.error('[HowlerPlayer] Error loading audio:', error)
+    } catch (err) {
+      console.error('[HowlerPlayer] Error loading audio:', err)
       error.value = 'เกิดข้อผิดพลาดในการโหลดเสียง กรุณาลองใหม่'
       isLoading.value = false
 
       // Clear current states to allow retry
       currentSurah.value = null
       currentReciter.value = null
-    }
-  }
-
-  // Playback controls
-  const play = async () => {
-    if (!currentHowl.value) return
-
-    try {
-      isBuffering.value = true
-
-      // If resuming from a paused state and we have a saved time for same surah, seek to it
-      const savedTime = initialState.currentTime || 0
-      const savedSurah = initialState.currentSurah
-      if (isResumingFromPause && savedTime > 0 && savedSurah === currentSurah.value) {
-        currentHowl.value.seek(savedTime)
-        currentTime.value = savedTime
-        isResumingFromPause = false // Reset flag
-      }
-
-      soundId.value = currentHowl.value.play() as number
-
-      // Set volume and rate
-      currentHowl.value.volume(volume.value / 100)
-      currentHowl.value.rate(playbackRate.value)
-
-    } catch (error) {
-      console.error('[HowlerPlayer] Error playing audio:', error)
-      error.value = 'เกิดข้อผิดพลาดในการเล่นเสียง กรุณาลองใหม่'
-      isBuffering.value = false
-    }
-  }
-
-  const pause = () => {
-    if (!currentHowl.value) return
-
-    currentHowl.value.pause()
-
-    // Set flag for resume functionality
-    isResumingFromPause = true
-
-    // Save current state (surah + time) when pausing
-    if (currentSurah.value) {
-      localStorage.updateCurrentState(currentSurah.value, currentTime.value)
     }
   }
 
@@ -426,6 +604,8 @@ export const useAudioPlayer = () => {
       await play()
     }
   }
+
+
 
   // Seeking
   const seekTo = (seconds: number) => {
@@ -509,32 +689,34 @@ export const useAudioPlayer = () => {
     seekTo(newTime)
   }
 
-  // Handle audio end with new player modes
-  const handleAudioEnd = () => {
-    switch (playerMode.value) {
-      case 'loop':
-        seekTo(0)
-        play()
-        break
+  // Handle audio end with new player modes (supports both foreground and background)
+  const handleAudioEnd = async () => {
+    console.log('[HowlerPlayer] Audio ended, player mode:', playerMode.value)
 
-      case 'shuffle':
-        playRandomSurah()
-        break
+    // For background compatibility: Use MediaSession nexttrack for auto-progression
+    // This ensures auto-progression works even when page is backgrounded/minimized
+    const needsAutoProgression = ['loop', 'shuffle', 'autoNext'].includes(playerMode.value)
 
-      case 'autoNext':
-        playNextSurah()
-        break
-
-      case 'none':
-      default:
-        // If none of the modes are active, just stop playing
-        break
+    if (needsAutoProgression) {
+      console.log('[HowlerPlayer] Auto-progression needed, calling handleBackgroundNext for background compatibility')
+      // Use the MediaSession-compatible handler which works in background
+      await handleBackgroundNext()
+    } else {
+      console.log('[HowlerPlayer] No auto-progression mode active')
+      // Update MediaSession to indicate no further action
+      if (import.meta.client && 'mediaSession' in navigator) {
+        navigator.mediaSession.playbackState = 'none'
+      }
     }
   }
 
   // Play random surah for shuffle mode
   const playRandomSurah = async () => {
-    if (!currentReciter.value) return
+    console.log('[HowlerPlayer] playRandomSurah called')
+    if (!currentReciter.value) {
+      console.log('[HowlerPlayer] playRandomSurah: No current reciter')
+      return
+    }
 
     // Generate random surah ID (1-114), excluding current surah
     let randomSurahId
@@ -542,15 +724,21 @@ export const useAudioPlayer = () => {
       randomSurahId = Math.floor(Math.random() * 114) + 1
     } while (randomSurahId === currentSurah.value)
 
+    console.log('[HowlerPlayer] playRandomSurah: Selected surah', randomSurahId)
+
     try {
       await loadAudio(randomSurahId, currentReciter.value)
       await play()
+
+      // Direct MediaSession metadata update (fallback)
+      updateMediaSessionForCurrentTrack()
+
       // Call metadata callback if set
       if (onAutoPlayMetadataUpdate) {
         onAutoPlayMetadataUpdate(randomSurahId, currentReciter.value)
       }
-    } catch (error) {
-      console.error('[HowlerPlayer] Error loading random surah:', error)
+    } catch (err) {
+      console.error('[HowlerPlayer] Error loading random surah:', err)
       error.value = 'Failed to load random surah'
     }
   }
@@ -560,18 +748,23 @@ export const useAudioPlayer = () => {
     if (!surahs.length) return null
 
     const randomIndex = Math.floor(Math.random() * surahs.length)
-    const selectedSurah = surahs[randomIndex]
+    const selectedSurahId = surahs[randomIndex]?.id ?? 1
 
-    console.log(`🎲 No current surah found - selecting random surah: ${selectedSurah.id} from ${surahs.length} available surahs`)
+    console.log(`🎲 No current surah found - selecting random surah: ${selectedSurahId} from ${surahs.length} available surahs`)
 
-    return selectedSurah.id
+    return selectedSurahId
   }
 
   // Play next sequential surah
   const playNextSurah = async () => {
-    if (!currentSurah.value || !currentReciter.value) return
+    console.log('[HowlerPlayer] playNextSurah called')
+    if (!currentSurah.value || !currentReciter.value) {
+      console.log('[HowlerPlayer] playNextSurah: Missing current surah or reciter')
+      return
+    }
 
     const nextSurahId = currentSurah.value + 1
+    console.log('[HowlerPlayer] playNextSurah: Next surah ID', nextSurahId)
 
     // If we've reached the end (Surah 114), restart from Surah 1
     const targetSurahId = nextSurahId > 114 ? 1 : nextSurahId
@@ -579,12 +772,16 @@ export const useAudioPlayer = () => {
     try {
       await loadAudio(targetSurahId, currentReciter.value)
       await play()
+
+      // Direct MediaSession metadata update (fallback)
+      updateMediaSessionForCurrentTrack()
+
       // Call metadata callback if set
       if (onAutoPlayMetadataUpdate) {
         onAutoPlayMetadataUpdate(targetSurahId, currentReciter.value)
       }
-    } catch (error) {
-      console.error('[HowlerPlayer] Error loading next surah:', error)
+    } catch (err) {
+      console.error('[HowlerPlayer] Error loading next surah:', err)
       error.value = 'Failed to load next surah'
     }
   }
@@ -601,12 +798,16 @@ export const useAudioPlayer = () => {
     try {
       await loadAudio(targetSurahId, currentReciter.value)
       await play()
+
+      // Direct MediaSession metadata update (fallback)
+      updateMediaSessionForCurrentTrack()
+
       // Call metadata callback if set
       if (onAutoPlayMetadataUpdate) {
         onAutoPlayMetadataUpdate(targetSurahId, currentReciter.value)
       }
-    } catch (error) {
-      console.error('[HowlerPlayer] Error loading previous surah:', error)
+    } catch (err) {
+      console.error('[HowlerPlayer] Error loading previous surah:', err)
       error.value = 'Failed to load previous surah'
     }
   }
@@ -617,6 +818,31 @@ export const useAudioPlayer = () => {
   // Set callback for metadata updates
   const setAutoPlayMetadataCallback = (callback: (surahId: number, reciterId: number) => void) => {
     onAutoPlayMetadataUpdate = callback
+  }
+
+  // Update MediaSession metadata for current track (fallback method)
+  const updateMediaSessionForCurrentTrack = () => {
+    if (!import.meta.client || !('mediaSession' in navigator)) return
+    if (!currentSurah.value || !currentReciter.value) return
+
+    // Simple metadata update with basic info
+    const surahName = `ซูเราะฮ์ ${currentSurah.value}`
+    const reciterName = `ภาษาไทยโดย ${currentReciter.value}`
+
+    navigator.mediaSession.metadata = new MediaMetadata({
+      title: surahName,
+      artist: reciterName,
+      album: 'อัลกุรอานพร้อมความหมายภาษาไทย',
+      artwork: [
+        {
+          src: '/cover.jpg',
+          sizes: '512x512',
+          type: 'image/jpeg'
+        }
+      ]
+    })
+
+    console.log(`[MediaSession] Updated metadata: ${surahName} by ${reciterName}`)
   }
 
   // Format time helper
@@ -665,12 +891,55 @@ export const useAudioPlayer = () => {
       currentHowl.value = null
       soundId.value = null
     }
+    // Ensure wake lock is released on cleanup
+    releaseWakeLock()
   }
 
-  // Initialize MediaSession on client
+  // Background/visibility state management for audio continuation
+  const setupVisibilityHandling = () => {
+    if (!import.meta.client) return
+
+    // Handle page visibility changes for background audio
+    document.addEventListener('visibilitychange', () => {
+      const isHidden = document.hidden
+      console.log('[HowlerPlayer] Page visibility changed, hidden:', isHidden)
+
+      // Re-acquire wake lock if document becomes visible and we are still playing
+      if (!isHidden && isPlaying.value && !wakeLock) {
+        console.log('[WakeLock] Re-acquiring on visibility change')
+        acquireWakeLock()
+      }
+
+      if (import.meta.client && 'mediaSession' in navigator) {
+        // Ensure MediaSession stays active when page is hidden
+        if (isHidden && isPlaying.value) {
+          console.log('[HowlerPlayer] Page hidden while playing, ensuring MediaSession active')
+          navigator.mediaSession.playbackState = 'playing'
+        }
+      }
+    })
+
+    // Handle page lifecycle events for better mobile compatibility
+    window.addEventListener('pagehide', () => {
+      console.log('[HowlerPlayer] Page hide event - maintaining audio state')
+      if (isPlaying.value && import.meta.client && 'mediaSession' in navigator) {
+        navigator.mediaSession.playbackState = 'playing'
+      }
+    })
+
+    window.addEventListener('pageshow', () => {
+      console.log('[HowlerPlayer] Page show event - syncing audio state')
+      if (isPlaying.value && import.meta.client && 'mediaSession' in navigator) {
+        navigator.mediaSession.playbackState = 'playing'
+      }
+    })
+  }
+
+  // Initialize MediaSession and background handling on client
   onMounted(() => {
     if (import.meta.client) {
       initMediaSession()
+      setupVisibilityHandling()
     }
   })
 

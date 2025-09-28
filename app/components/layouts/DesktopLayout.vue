@@ -25,7 +25,7 @@
                   <select
                     class="px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 text-sm"
                     :value="currentReciterId" @change="onDesktopReciterChange">
-                    <option value="1">บรรจง โซะมณี</option>
+                    <option value="1">อ.บรรจง โซ๊ะมณี</option>
                     <option value="2">อุมัร สุจิตวรรณศรี</option>
                   </select>
                 </div>
@@ -50,7 +50,8 @@
 
               <!-- Table Body -->
               <div class="max-h-96 overflow-y-auto">
-                <div v-for="(surah, index) in surahs" :key="surah.id"
+                <div
+v-for="(surah, index) in surahs" :key="surah.id"
                   class="px-6 py-4 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors cursor-pointer border-b border-slate-100 dark:border-slate-700 last:border-b-0"
                   @click="() => selectAndPlaySurah(surah.id)">
                   <div class="grid grid-cols-12 gap-4 items-center">
@@ -59,7 +60,8 @@
                       <div class="flex items-center">
                         <span v-if="currentSurah !== surah.id" class="text-slate-400 text-sm">{{ String(index +
                           1).padStart(2, '0') }}</span>
-                        <UIcon v-else name="i-heroicons-speaker-wave"
+                        <UIcon
+v-else name="i-heroicons-speaker-wave"
                           class="w-4 h-4 text-slate-800 dark:text-slate-100" />
                       </div>
                     </div>
@@ -70,7 +72,8 @@
                     </div>
 
                     <div class="col-span-1">
-                      <span class="inline-flex px-2 py-0.5 text-xs rounded-full" :class="surah.revelationType === 'Meccan'
+                      <span
+class="inline-flex px-2 py-0.5 text-xs rounded-full" :class="surah.revelationType === 'Meccan'
                         ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/50 dark:text-amber-300'
                         : 'bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300'">
                         {{ surah.revelationType === 'Meccan' ? 'มักกิยะห์' : 'มะดะนียะห์' }}
@@ -88,7 +91,7 @@
                     <!-- Reciter info -->
                     <div class="col-span-4">
                       <p class="text-slate-500 dark:text-slate-400 text-xs">
-                        เสียงแปลโดย {{ getCurrentReciterName }}
+                        เสียงภาษาไทยโดย {{ getCurrentReciterName }}
                       </p>
                     </div>
                   </div>
@@ -176,7 +179,7 @@ const {
   currentReciterId,
 
   // Computed
-  currentReciterName,
+  currentReciterName: _currentReciterName,
   getCurrentReciterName,
   correctProgress,
 
@@ -184,7 +187,7 @@ const {
   isLargePlayerMode,
 
   // Methods
-  playFromHero,
+  playFromHero: _playFromHero,
   previousVerse,
   nextVerse,
   togglePlay,

@@ -59,7 +59,7 @@ export interface AudioPlayerState {
   currentSurah: number | null
   currentReciter: number | null
   currentVerse: number
-  audioElement: HTMLAudioElement | null
+  audioElement: unknown | null
   audioFile: AudioFile | null
   error: string | null
 }
@@ -74,5 +74,35 @@ export interface CachedAudio {
   cachedAt: number
   lastAccessedAt: number
   fileSize: number
+}
+
+export interface AudioMetadata {
+  fileSize?: number
+  format?: string
+  duration?: number
+}
+
+export interface SurahApiData {
+  id: number
+  name?: string
+  thaiName?: string
+  arabicName?: string
+  englishName?: string
+  revelationType?: 'Meccan' | 'Medinan'
+  versesCount?: number
+  order?: number
+  duration?: number
+  fileSize?: number
+  bitRate?: number
+  format?: string
+  codec?: string
+  originalFilename?: string
+  newFilename?: string
+}
+
+export interface SurahApiResponse {
+  reciterId: string
+  surahs: SurahApiData[]
+  total: number
 }
 

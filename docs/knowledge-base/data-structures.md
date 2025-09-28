@@ -14,7 +14,7 @@ Represents voice actors and translators who provide audio narrations.
 export interface Reciter {
   id: number                    // Unique identifier
   reciter_id: number           // Maps to directory structure (e.g., "001")
-  name: string                 // Thai name (e.g., "บรรจง โซะมณี")
+  name: string                 // Thai name (e.g., "อ.บรรจง โซ๊ะมณี")
   translatedName: string       // Romanized name (e.g., "Bancheong Somanee")
   style: string                // Recording style (e.g., "Thai Translation")
   styleDescription: string     // Thai style description
@@ -23,7 +23,7 @@ export interface Reciter {
 ```
 
 **Current Reciters:**
-- **ID 1**: บรรจง โซะมณี (Bancheong Somanee) - Thai Translation
+- **ID 1**: อ.บรรจง โซ๊ะมณี (Bancheong Somanee) - Thai Translation
 - **ID 2**: อุมัร สุจิตวรรณศรี (Umar Suchitawansri) - Thai Translation
 
 ### Surah Interface
@@ -178,7 +178,7 @@ export const reciters: Reciter[] = [
   {
     id: 1,
     reciter_id: 1,
-    name: 'บรรจง โซะมณี',
+    name: 'อ.บรรจง โซ๊ะมณี',
     translatedName: 'Bancheong Somanee',
     style: 'Thai Translation',
     styleDescription: 'แปลภาษาไทย',

@@ -78,7 +78,6 @@
                     <div class="w-3 h-3 animate-spin rounded-full border border-amber-700 dark:border-amber-500 border-t-transparent" />
                     <span>
                       กำลังโหลดเสียง...
-                      <span v-if="networkType === 'cellular'" class="ml-1">(📱 เซลลูลาร์)</span>
                     </span>
                   </div>
                 </div>
@@ -93,9 +92,9 @@
                     <UIcon name="i-heroicons-exclamation-triangle" class="w-3 h-3" />
                     <span>เกิดข้อผิดพลาด - กรุณาลองใหม่</span>
                     <button
-                      @click="clearError"
                       class="ml-2 text-red-600 dark:text-red-300 hover:text-red-400 dark:hover:text-red-100 transition-colors"
                       :title="'ล้างข้อผิดพลาด'"
+                      @click="clearError"
                     >
                       <UIcon name="i-heroicons-x-mark" class="w-3 h-3" />
                     </button>
@@ -136,8 +135,8 @@
             <!-- Previous Surah -->
             <button
               class="w-14 h-14 rounded-full flex items-center justify-center text-slate-600 dark:text-slate-400 transition-all hover:text-slate-800 dark:hover:text-slate-200 active:scale-95"
-              :disabled="currentSurah <= 1"
-              :class="{ 'opacity-50': currentSurah <= 1 }"
+              :disabled="(currentSurah || 0) <= 1"
+              :class="{ 'opacity-50': (currentSurah || 0) <= 1 }"
               @click="playPreviousSurah"
             >
               <UIcon name="i-ri-skip-back-fill" class="w-8 h-8" />
@@ -163,8 +162,8 @@
             <!-- Next Surah -->
             <button
               class="w-14 h-14 rounded-full flex items-center justify-center text-slate-600 dark:text-slate-400 transition-all hover:text-slate-800 dark:hover:text-slate-200 active:scale-95"
-              :disabled="currentSurah >= 114"
-              :class="{ 'opacity-50': currentSurah >= 114 }"
+              :disabled="(currentSurah || 0) >= 114"
+              :class="{ 'opacity-50': (currentSurah || 0) >= 114 }"
               @click="playNextSurah"
             >
               <UIcon name="i-ri-skip-forward-fill" class="w-8 h-8" />
@@ -278,7 +277,7 @@ const {
   currentSurah,
   error,
   isBuffering,
-  networkType,
+  networkType: _networkType,
 
   // Player configuration
   shufflePlay,

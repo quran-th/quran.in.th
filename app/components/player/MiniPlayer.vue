@@ -10,7 +10,7 @@
         </div>
         <div>
           <p class="font-medium">{{ getCurrentSurahName().split('.')[1]?.trim() || 'อัล-ฟาติหะฮฺ' }}</p>
-          <p class="text-white/60 text-sm">เสียงแปลโดย {{ getCurrentReciterName }}</p>
+          <p class="text-white/60 text-sm">เสียงภาษาไทยโดย {{ getCurrentReciterName }}</p>
         </div>
       </div>
 
@@ -20,13 +20,15 @@
         <button
           class="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center hover:bg-white/30 transition-colors"
           @click="togglePlay">
-          <UIcon :name="isPlaying ? 'i-heroicons-pause' : 'i-heroicons-play'" class="w-4 h-4"
+          <UIcon
+:name="isPlaying ? 'i-heroicons-pause' : 'i-heroicons-play'" class="w-4 h-4"
             :class="{ 'ml-0.5': !isPlaying }" />
         </button>
 
         <!-- Progress Bar -->
         <div class="w-32 h-1 bg-white/20 rounded-full relative cursor-pointer" @click="seekToClick">
-          <div class="h-full bg-white rounded-full transition-all duration-100"
+          <div
+class="h-full bg-white rounded-full transition-all duration-100"
             :style="{ width: correctProgress + '%' }" />
         </div>
       </div>

@@ -12,7 +12,7 @@
       />
     </button>
     <!-- Spacer when no back button -->
-    <div v-else class="w-10 h-10"></div>
+    <div v-else class="w-10 h-10"/>
 
     <!-- Center: Track Info -->
     <div class="flex-1 text-center mx-4">
@@ -24,17 +24,15 @@
       </p>
     </div>
 
-    <!-- Right: Theme Toggle Button -->
-    <button
-      class="w-10 h-10 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center text-slate-700 dark:text-slate-300 hover:bg-slate-300 dark:hover:bg-slate-600 transition-all active:scale-95"
-      @click="toggleDarkMode"
-    >
-      <UIcon
-        :name="isDark ? 'i-heroicons-sun' : 'i-heroicons-moon'"
-        class="w-5 h-5"
-      />
-    </button>
+    <!-- Right: Settings Dropdown -->
+    <SettingsDropdown @show-about="showAboutModal = true" />
   </div>
+
+  <!-- About Modal -->
+  <AboutModal
+    :is-open="showAboutModal"
+    @close="showAboutModal = false"
+  />
 </template>
 
 <script setup lang="ts">
@@ -44,8 +42,12 @@
  * Two-line header for the mobile player view featuring:
  * - Back navigation button (left) - optional with showBackButton prop
  * - Two-line track info (center) - bold surah name, smaller reciter name
- * - Theme toggle button (right) - switches between light/dark mode
+ * - Settings dropdown (right) - theme toggle and about modal
  */
+
+// Explicit imports for new components
+import SettingsDropdown from '~/components/ui/SettingsDropdown.vue'
+import AboutModal from '~/components/modals/AboutModal.vue'
 
 // Props
 interface Props {
@@ -53,38 +55,16 @@ interface Props {
   buttonIcon?: 'back' | 'playlist'
 }
 
-const props = withDefaults(defineProps<Props>(), {
+withDefaults(defineProps<Props>(), {
   showBackButton: true,
   buttonIcon: 'back'
 })
 
-// Use integrated app composable
-const {
-  currentReciterName,
-  getCurrentSurahName
-} = useAppIntegrated()
-
-// Use colorMode directly to avoid reactivity issues
-const colorMode = useColorMode()
-const isDark = computed(() => colorMode.value === 'dark')
-
-const toggleDarkMode = () => {
-  colorMode.value = colorMode.value === 'dark' ? 'light' : 'dark'
-}
+// Modal state
+const showAboutModal = ref(false)
 
 // Events
 defineEmits<{
   goBack: []
 }>()
-
-// Methods
-const getSurahDisplayName = () => {
-  const fullName = getCurrentSurahName()
-  // Extract just the Thai name part after the number
-  const parts = fullName.split('.')
-  if (parts.length > 1) {
-    return parts[1].trim()
-  }
-  return fullName || 'อัล-ฟาติหะฮฺ'
-}
 </script>

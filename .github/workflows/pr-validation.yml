@@ -1,0 +1,184 @@
+name: PR Validation
+
+on:
+  pull_request:
+    branches:
+      - main
+      - develop
+    types: [opened, synchronize, reopened, ready_for_review]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  validate:
+    name: Validate PR
+    runs-on: ubuntu-latest
+    if: ${{ !github.event.pull_request.draft }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run linter
+        run: npm run lint
+
+      - name: Run type check
+        run: npm run typecheck
+
+      - name: Build test
+        run: npm run build
+
+  commit-lint:
+    name: Validate Commit Messages
+    runs-on: ubuntu-latest
+    if: ${{ !github.event.pull_request.draft }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install commitlint
+        run: |
+          npm install --save-dev @commitlint/config-conventional @commitlint/cli
+
+      - name: Validate current commit (last commit)
+        run: npx commitlint --from HEAD~1 --to HEAD --verbose
+
+      - name: Validate PR commits
+        run: |
+          echo "Validating commits in PR..."
+          npx commitlint --from origin/main --to HEAD --verbose
+
+  size-check:
+    name: Bundle Size Check
+    runs-on: ubuntu-latest
+    if: ${{ !github.event.pull_request.draft }}
+    steps:
+      - name: Checkout base
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.base_ref }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies (base)
+        run: npm ci
+
+      - name: Build base
+        run: npm run build
+
+      - name: Save base build size
+        run: |
+          if [ -d ".output" ]; then
+            du -sh .output > base-size.txt
+            echo "Base build size:" && cat base-size.txt
+          fi
+
+      - name: Checkout PR
+        uses: actions/checkout@v4
+        with:
+          clean: false
+
+      - name: Install dependencies (PR)
+        run: npm ci
+
+      - name: Build PR
+        run: npm run build
+
+      - name: Compare build sizes
+        run: |
+          if [ -d ".output" ]; then
+            du -sh .output > pr-size.txt
+            echo "PR build size:" && cat pr-size.txt
+
+            if [ -f "base-size.txt" ]; then
+              echo "Size comparison:"
+              echo "Base: $(cat base-size.txt)"
+              echo "PR:   $(cat pr-size.txt)"
+            fi
+          fi
+
+  preview-comment:
+    name: Add Preview Comment
+    runs-on: ubuntu-latest
+    if: ${{ !github.event.pull_request.draft }}
+    needs: [validate, commit-lint]
+    steps:
+      - name: Comment PR
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            });
+
+            const botComment = comments.find(comment =>
+              comment.user.type === 'Bot' &&
+              comment.body.includes('## 🚀 PR Validation Results')
+            );
+
+            const commentBody = `## 🚀 PR Validation Results
+
+            ✅ **Lint**: Passed
+            ✅ **Type Check**: Passed
+            ✅ **Build**: Successful
+            ✅ **Commit Messages**: Valid conventional commits
+
+            ### 📋 Ready for Review
+            This PR has passed all validation checks and is ready for code review.
+
+            ### 🔄 Next Steps
+            - Once approved and merged, semantic-release will automatically:
+              - Generate a new version based on commit types
+              - Create a changelog entry
+              - Deploy to production
+              - Create a GitHub release
+
+            ### 📝 Commit Types Used
+            - \`feat:\` - New features (minor version bump)
+            - \`fix:\` - Bug fixes (patch version bump)
+            - \`perf:\` - Performance improvements (patch version bump)
+            - \`refactor:\` - Code refactoring (patch version bump)
+            - \`BREAKING CHANGE:\` - Breaking changes (major version bump)
+
+            *This comment is automatically updated on each push.*`;
+
+            if (botComment) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: botComment.id,
+                body: commentBody
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body: commentBody
+              });
+            }

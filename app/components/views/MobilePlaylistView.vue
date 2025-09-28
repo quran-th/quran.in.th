@@ -82,12 +82,12 @@
       <!-- Enhanced Surah List -->
       <div class="flex-1 min-h-0">
         <div class="relative h-full">
-          <div class="space-y-3 h-full overflow-y-auto pb-4" ref="surahListContainer">
+          <div ref="surahListContainer" class="space-y-3 h-full overflow-y-auto pb-4">
             <div
               v-for="surah in surahs"
               :key="surah.id"
-              :data-surah-id="surah.id"
               :ref="currentSurah === surah.id ? 'currentSurahElement' : undefined"
+              :data-surah-id="surah.id"
               class="relative rounded-2xl overflow-hidden cursor-pointer transition-all duration-200 hover:scale-[1.02] active:scale-[0.98]"
               :class="{ 'opacity-70 pointer-events-none': loadingSurahId === surah.id }"
               @click="() => playSurahAndTransition(surah.id)"
@@ -196,7 +196,7 @@ const lastAttemptedSurahId = ref<number | null>(null)
 
 // Template refs
 const surahListContainer = ref<HTMLElement>()
-const currentSurahElement = ref<HTMLElement>()
+const _currentSurahElement = ref<HTMLElement>()
 
 // Events
 const emit = defineEmits<{

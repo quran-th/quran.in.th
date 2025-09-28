@@ -11,9 +11,9 @@ export const useAppIntegrated = () => {
   const { surahs, getSurahById, formatDuration, loadSurahs } = useSurahs()
 
   // UI state management - use existing composables
-  const { isDark, toggleDarkMode } = useThemeActions()
-  const { isMobile } = useResponsiveState()
-  const { isLargePlayerMode, togglePlayerMode } = usePlayerModeActions()
+  const { isDark: _isDark, toggleDarkMode } = useThemeActions()
+  const { isMobile: _isMobile } = useResponsiveState()
+  const { isLargePlayerMode: _isLargePlayerMode, togglePlayerMode } = usePlayerModeActions()
   const { selectedSurahValue, setSelectedSurah } = useSelectionState()
 
   // Current reciter state from existing composable
@@ -46,6 +46,12 @@ export const useAppIntegrated = () => {
   const getCurrentSurahTotalDuration = () => {
     if (!audioPlayer.currentSurah.value) return '0:00'
 
+    // Use real Howler.js duration when available (more accurate than metadata)
+    if (audioPlayer.duration.value > 0) {
+      return audioPlayer.formatTime(audioPlayer.duration.value)
+    }
+
+    // Fallback to metadata duration when Howler.js duration not yet available
     const surah = getSurahById(audioPlayer.currentSurah.value)
     if (!surah || !surah.duration) return '0:00'
 
@@ -55,27 +61,33 @@ export const useAppIntegrated = () => {
   const getCurrentSurahDurationSeconds = () => {
     if (!audioPlayer.currentSurah.value) return 0
 
+    // Use real Howler.js duration when available (more accurate than metadata)
+    if (audioPlayer.duration.value > 0) {
+      return audioPlayer.duration.value
+    }
+
+    // Fallback to metadata duration when Howler.js duration not yet available
     const surah = getSurahById(audioPlayer.currentSurah.value)
     return surah?.duration || 0
   }
 
   const correctProgress = computed(() => {
-    const metadataDuration = getCurrentSurahDurationSeconds()
-    return metadataDuration > 0 ? (audioPlayer.currentTime.value / metadataDuration) * 100 : 0
+    const realDuration = getCurrentSurahDurationSeconds()
+    return realDuration > 0 ? (audioPlayer.currentTime.value / realDuration) * 100 : 0
   })
 
-  // Enhanced seek function with metadata duration
+  // Enhanced seek function with real audio duration
   const seekToClick = (event: MouseEvent) => {
     const target = event.currentTarget as HTMLElement
     const rect = target.getBoundingClientRect()
     const clickX = event.clientX - rect.left
     const percentage = (clickX / rect.width) * 100
 
-    // Use metadata duration for accurate seeking
-    const metadataDuration = getCurrentSurahDurationSeconds()
-    if (metadataDuration > 0) {
-      const seekTime = (percentage / 100) * metadataDuration
-      audioPlayer.seekTo(Math.max(0, Math.min(metadataDuration, seekTime)))
+    // Use real Howler.js duration for accurate seeking
+    const realDuration = getCurrentSurahDurationSeconds()
+    if (realDuration > 0) {
+      const seekTime = (percentage / 100) * realDuration
+      audioPlayer.seekTo(Math.max(0, Math.min(realDuration, seekTime)))
     } else {
       // Fallback to original method
       audioPlayer.seekToProgress(Math.max(0, Math.min(100, percentage)))
@@ -165,7 +177,7 @@ export const useAppIntegrated = () => {
       if (surah) {
         const surahDisplayName = `ซูเราะฮฺ ${surah.thaiName}`
         const reciterName = currentReciterName.value
-        audioPlayer.updateMediaSessionMetadata(surahDisplayName, `เสียงแปลโดย ${reciterName}`)
+        audioPlayer.updateMediaSessionMetadata(surahDisplayName, `เสียงภาษาไทยโดย ${reciterName}`)
         console.log(`🎵 Now playing: ${surahDisplayName} by ${reciterName}`)
       }
     } catch (err) {
@@ -246,7 +258,7 @@ export const useAppIntegrated = () => {
         if (surah) {
           const surahDisplayName = `ซูเราะฮฺ ${surah.thaiName}`
           const reciterName = currentReciterName.value
-          audioPlayer.updateMediaSessionMetadata(surahDisplayName, `เสียงแปลโดย ${reciterName}`)
+          audioPlayer.updateMediaSessionMetadata(surahDisplayName, `เสียงภาษาไทยโดย ${reciterName}`)
         }
 
         console.log(`✅ Random surah ${randomSurahId} loaded and ready for playback`)
@@ -272,7 +284,7 @@ export const useAppIntegrated = () => {
       if (surah) {
         const surahDisplayName = `ซูเราะฮฺ ${surah.thaiName}`
         const reciterName = currentReciterName.value
-        audioPlayer.updateMediaSessionMetadata(surahDisplayName, `เสียงแปลโดย ${reciterName}`)
+        audioPlayer.updateMediaSessionMetadata(surahDisplayName, `เสียงภาษาไทยโดย ${reciterName}`)
       }
 
       console.log(`✅ Session restored: Surah ${audioPlayer.currentSurah.value} ready for playback`)
@@ -284,6 +296,22 @@ export const useAppIntegrated = () => {
     }
   }
 
+  // Set up auto-play metadata callback for background MediaSession updates
+  audioPlayer.setAutoPlayMetadataCallback((surahId: number, _reciterId: number) => {
+    const surah = getSurahById(surahId)
+    if (surah) {
+      const surahDisplayName = `ซูเราะฮฺ ${surah.thaiName}`
+      const reciterName = currentReciterName.value
+      audioPlayer.updateMediaSessionMetadata(surahDisplayName, `เสียงภาษาไทยโดย ${reciterName}`)
+      console.log(`🎵 Background metadata updated: ${surahDisplayName} by ${reciterName}`)
+
+      // Also update UI state to keep everything in sync
+      if (selectedSurahValue.value !== surahId) {
+        setSelectedSurah(surahId)
+      }
+    }
+  })
+
   return {
     ...audioPlayer,
     ...useThemeActions(),
@@ -294,6 +322,7 @@ export const useAppIntegrated = () => {
     // Reciter state
     currentReciterId,
     currentReciterName,
+    getCurrentReciterName,
 
     // Data
     surahs,
@@ -328,7 +357,7 @@ export const useAppIntegrated = () => {
 
     // Reciter management
     availableReciters: computed(() => [
-      { id: "001", name: "บรรจง โซะมณี" },
+      { id: "001", name: "อ.บรรจง โซ๊ะมณี" },
       { id: "002", name: "อุมัร สุจิตวรรณศรี" }
     ])
   }

@@ -1,4 +1,9 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
+import { readFileSync } from 'fs'
+
+// Read package.json for version info
+const packageJson = JSON.parse(readFileSync('./package.json', 'utf-8'))
+
 export default defineNuxtConfig({
   compatibilityDate: '2025-07-15',
   devtools: { enabled: true },
@@ -48,7 +53,8 @@ export default defineNuxtConfig({
       prerender: true,
       headers: {
         'Cache-Control': 'no-cache, must-revalidate, s-maxage=0',
-        'ETag': true // Enable conditional requests for efficiency
+        'Pragma': 'no-cache', // HTTP/1.0 compatibility
+        'Expires': '0' // Legacy browsers
       }
     },
     // Manifest - prevent caching for PWA updates
@@ -112,8 +118,75 @@ export default defineNuxtConfig({
   modules: [
     "nitro-cloudflare-dev",
     "@nuxt/ui",
-    "@nuxt/eslint"
+    "@nuxt/eslint",
+    "@vite-pwa/nuxt"
   ],
+
+  // PWA Configuration for Background Audio Support
+  pwa: {
+    // Service Worker Configuration
+    strategies: 'generateSW',
+    registerType: 'autoUpdate',
+    devOptions: {
+      enabled: true,
+      type: 'module'
+    },
+
+    // Workbox Configuration for Audio Caching
+    workbox: {
+      globPatterns: ['**/*.{js,css,html,png,svg,ico,woff,woff2}'],
+
+      // Runtime caching strategies optimized for audio streaming
+      runtimeCaching: [
+        {
+          // Cache audio API endpoints with specific rules for background audio
+          urlPattern: /^.*\/api\/audio\/.*$/,
+          handler: 'CacheFirst',
+          options: {
+            cacheName: 'quran-audio-cache',
+            expiration: {
+              maxEntries: 100,
+              maxAgeSeconds: 60 * 60 * 24 * 7 // 1 week
+            },
+            cacheableResponse: {
+              statuses: [200] // Only cache 200 responses, exclude 206 partial content
+            }
+          }
+        },
+        {
+          // Cache surah metadata for offline access
+          urlPattern: /^.*\/api\/surahs\/.*$/,
+          handler: 'StaleWhileRevalidate',
+          options: {
+            cacheName: 'quran-metadata-cache',
+            expiration: {
+              maxEntries: 50,
+              maxAgeSeconds: 60 * 60 * 24 // 1 day
+            }
+          }
+        },
+        {
+          // Cache static assets with long-term storage
+          urlPattern: /^.*\.(png|jpg|jpeg|svg|ico|woff|woff2)$/,
+          handler: 'CacheFirst',
+          options: {
+            cacheName: 'static-assets-cache',
+            expiration: {
+              maxEntries: 200,
+              maxAgeSeconds: 60 * 60 * 24 * 30 // 30 days
+            }
+          }
+        }
+      ],
+
+      // Skip waiting for immediate activation of new service worker
+      skipWaiting: false, // User-controlled updates per design preferences
+      clientsClaim: true
+    },
+
+    // Use existing /public/manifest.json instead of generating new one
+    manifest: false
+  },
 
   colorMode: {
     preference: 'light', // Set default to light instead of system
@@ -131,7 +204,11 @@ export default defineNuxtConfig({
     // Public keys (exposed to client-side)
     public: {
       // Client determines audio source via environment
-      useLocalAudio: process.env.NODE_ENV === 'development' ? true : (process.env.USE_LOCAL_AUDIO === 'true')
+      useLocalAudio: process.env.NODE_ENV === 'development' ? true : (process.env.USE_LOCAL_AUDIO === 'true'),
+
+      // Build-time app information
+      appVersion: packageJson.version,
+      buildTime: new Date().toISOString()
     }
   }
 })

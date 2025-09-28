@@ -21,7 +21,7 @@ export const useReciterState = () => {
     availableReciters: [
       {
         id: "001",
-        name: "บรรจง โซะมณี"
+        name: "อ.บรรจง โซ๊ะมณี"
       },
       {
         id: "002",

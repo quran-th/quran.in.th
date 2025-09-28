@@ -3,7 +3,8 @@
   <div class="flex flex-col flex-1 min-h-0">
     <div class="relative flex-1 min-h-0">
       <div class="space-y-3 h-full overflow-y-auto">
-        <div v-for="surah in surahs" :key="surah.id"
+        <div
+v-for="surah in surahs" :key="surah.id"
           class="relative rounded-2xl overflow-hidden cursor-pointer transition-transform active:scale-98"
           @click="() => selectAndPlaySurahFromCard(surah.id)">
           <!-- Background inspired by hero section -->
@@ -32,7 +33,8 @@
               <button
                 class="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center hover:bg-white/30 transition-colors"
                 @click.stop="() => selectAndPlaySurahFromCard(surah.id)">
-                <UIcon :name="currentSurah === surah.id && isPlaying ? 'i-heroicons-pause' : 'i-heroicons-play'"
+                <UIcon
+:name="currentSurah === surah.id && isPlaying ? 'i-heroicons-pause' : 'i-heroicons-play'"
                   class="w-5 h-5 text-white" :class="{ 'ml-0.5': !(currentSurah === surah.id && isPlaying) }" />
               </button>
             </div>
