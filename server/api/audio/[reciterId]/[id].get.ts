@@ -1,14 +1,3 @@
-interface R2BucketLike {
-  get(key: string, options?: { range?: { offset: number; length?: number } }): Promise<{
-    body?: ReadableStream
-    size?: number
-    writeHttpMetadata?: (headers: Record<string, string>) => void
-  } | null>
-  head(key: string): Promise<{
-    size?: number
-  } | null>
-}
-
 export default defineEventHandler(async (event) => {
   // Enhanced CORS for Howler.js compatibility
   if (event.node.req.method === 'OPTIONS') {
@@ -57,8 +46,9 @@ export default defineEventHandler(async (event) => {
   
   // Enhanced environment detection for Cloudflare Workers
   const runtimeConfig = useRuntimeConfig()
-  const env = event.context.cloudflare?.env || {}
-  const useLocalAudio = runtimeConfig.useLocalAudio || env.USE_LOCAL_AUDIO === 'true'
+  const { cloudflare } = event.context
+  const env = cloudflare?.env
+  const useLocalAudio = Boolean(runtimeConfig.useLocalAudio || env?.USE_LOCAL_AUDIO === 'true')
   
   if (useLocalAudio) {
     // Development mode: Enhanced static file serving for Howler.js compatibility
@@ -84,7 +74,7 @@ export default defineEventHandler(async (event) => {
   }
 
   // Production mode: R2 streaming with proper HTTP Range request support
-  const bucket = env.AUDIO_BUCKET as R2BucketLike
+  const bucket = env?.AUDIO_BUCKET
   if (!bucket) {
     throw createError({ statusCode: 503, statusMessage: 'Audio service unavailable' })
   }
@@ -134,12 +124,7 @@ export default defineEventHandler(async (event) => {
       // Build response headers for partial content with Howler.js optimization
       const headers = new Headers()
       if (object.writeHttpMetadata) {
-        const headersRecord: Record<string, string> = {}
-        object.writeHttpMetadata(headersRecord)
-        // Copy the headers from the record to Headers
-        Object.entries(headersRecord).forEach(([key, value]) => {
-          headers.set(key, value)
-        })
+        object.writeHttpMetadata(headers)
       }
       
       headers.set('Content-Type', 'audio/ogg')
@@ -171,12 +156,7 @@ export default defineEventHandler(async (event) => {
       // Build response headers for full file with Howler.js optimization
       const headers = new Headers()
       if (object.writeHttpMetadata) {
-        const headersRecord: Record<string, string> = {}
-        object.writeHttpMetadata(headersRecord)
-        // Copy the headers from the record to Headers
-        Object.entries(headersRecord).forEach(([key, value]) => {
-          headers.set(key, value)
-        })
+        object.writeHttpMetadata(headers)
       }
       
       headers.set('Content-Type', 'audio/ogg')
