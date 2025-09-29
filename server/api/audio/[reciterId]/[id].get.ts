@@ -1,3 +1,5 @@
+/// <reference types="../../../../env.d.ts" />
+
 export default defineEventHandler(async (event) => {
   // Enhanced CORS for Howler.js compatibility
   if (event.node.req.method === 'OPTIONS') {
