@@ -1,3 +1,10 @@
+## [1.0.1](https://github.com/quran-th/quran.in.th/compare/v1.0.0...v1.0.1) (2025-09-29)
+
+
+### 🐛 Bug Fixes
+
+* resolve R2 bucket writeHttpMetadata type error in audio streaming ([#3](https://github.com/quran-th/quran.in.th/issues/3)) ([7566ff0](https://github.com/quran-th/quran.in.th/commit/7566ff0751483517c2a0e1ca6c96cb05d7dd379a))
+
 ## 1.0.0 (2025-09-28)
 
 
