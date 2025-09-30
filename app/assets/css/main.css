@@ -214,36 +214,6 @@ body {
 /* Responsive app container - using Tailwind utilities in templates */
 /* Container styles moved to Tailwind classes */
 
-/* Responsive Arabic text styling */
-.arabic-text {
-  font-family: "Amiri", "Scheherazade New", "Times New Roman", serif;
-  font-size: 1.5rem;
-  line-height: 2.2;
-  font-weight: 400;
-  letter-spacing: 0.02em;
-  color: var(--text-primary);
-}
-
-@media (min-width: 375px) {
-  .arabic-text {
-    font-size: 1.75rem;
-  }
-}
-
-@media (min-width: 768px) {
-  .arabic-text {
-    font-size: 2rem;
-    line-height: 2.4;
-  }
-}
-
-@media (min-width: 1024px) {
-  .arabic-text {
-    font-size: 2.25rem;
-    line-height: 2.6;
-  }
-}
-
 /* RTL support */
 [dir="rtl"] {
   text-align: right;
