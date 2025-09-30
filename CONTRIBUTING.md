@@ -137,6 +137,16 @@ const emit = defineEmits<{
 3. **Bug Fixes**: `fix/bug-description` - Bug fixes
 4. **Hotfixes**: `hotfix/critical-fix` - Critical production fixes
 
+### Pull Request Requirement
+
+**⚠️ All changes must go through Pull Requests** - Direct commits to `main` are not allowed.
+
+1. **Create Feature Branch**: Always branch from `main` for any changes
+2. **Open Pull Request**: All contributions require PR review and automated validation
+3. **Automated Validation**: PRs must pass all checks before merge
+4. **Code Review**: Maintainer approval required for all changes
+5. **No Direct Commits**: Never commit directly to `main` branch
+
 ### Commit Convention
 
 We use **Conventional Commits** with English descriptions:
