@@ -134,14 +134,20 @@ Sample audio files are stored in `seed-data/audio/` with the following structure
 ```
 seed-data/audio/
 ├── 001/              # Reciter ID (padded to 3 digits)
-│   ├── 001.ogg      # Surah 1
-│   └── 002.ogg      # Surah 2
+│   ├── 001.ogg      # Surah 1: อัล-ฟาติฮะฮ์ (Al-Fatihah)
+│   ├── 112.ogg      # Surah 112: อัล-อิคลาศ (Al-Ikhlas)
+│   ├── 113.ogg      # Surah 113: อัล-ฟะลัก (Al-Falaq)
+│   └── 114.ogg      # Surah 114: อัน-นาส (An-Nas)
 └── 002/              # Another reciter
     ├── 001.ogg
-    └── 002.ogg
+    ├── 112.ogg
+    ├── 113.ogg
+    └── 114.ogg
 ```
 
 This structure matches the production R2 bucket exactly: `{reciterId}/{surahId}.ogg`
+
+> **Development Audio Files**: The local development environment includes sample audio for only 4 surahs (for both reciters) to keep the repository size manageable. These surahs provide sufficient coverage for testing audio playback, seeking, reciter switching, and error handling functionality.
 
 #### Development Workflow
 

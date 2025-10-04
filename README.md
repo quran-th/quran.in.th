@@ -23,6 +23,12 @@ Open `http://localhost:8787` in your browser.
 
 > **Note**: This project uses Cloudflare R2 for audio storage. Wrangler (Cloudflare's CLI) is included in dependencies and provides local R2 emulation via Miniflare. The `seed:r2` command populates your local R2 bucket with sample audio files.
 
+> **Development Audio**: The local development environment includes sample audio for 4 surahs only (for both reciters):
+> - Surah 1: อัล-ฟาติฮะฮ์ (Al-Fatihah)
+> - Surah 112: อัล-อิคลาศ (Al-Ikhlas)
+> - Surah 113: อัล-ฟะลัก (Al-Falaq)
+> - Surah 114: อัน-นาส (An-Nas)
+
 ## 📖 Documentation
 
 - **[CONTRIBUTING.md](CONTRIBUTING.md)** - Complete guide for contributors (development setup, code standards, workflow)
