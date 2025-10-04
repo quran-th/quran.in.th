@@ -444,7 +444,7 @@ export const useAudioPlayer = () => {
       const howl = new Howl({
         src: [audioUrl],
         html5: true, // CRITICAL: Use HTML5 Audio for large files and streaming
-        preload: networkType.value === 'cellular' ? 'metadata' : true,
+        preload: 'metadata', // CRITICAL: Only preload metadata for immediate playback start with progressive streaming
         format: ['ogg', 'mp3'], // Explicit format support
         onload: () => {
           duration.value = howl.duration()
