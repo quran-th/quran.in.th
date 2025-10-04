@@ -4,6 +4,53 @@
 
 The audio system is the core functionality of Quran-TH, built on Howler.js for advanced audio control and Media Session API for native integration. It provides seamless audio streaming, verse-level timing, and cross-platform compatibility.
 
+## Unified R2 Architecture
+
+The application uses a **unified storage architecture** with Cloudflare R2 for both development and production environments:
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                     Browser Client                          │
+│                  (Howler.js Audio Player)                   │
+└────────────────────────┬────────────────────────────────────┘
+                         │
+                         │ HTTP Request
+                         │ /api/audio/{reciterId}/{surahId}
+                         │
+                         ▼
+┌─────────────────────────────────────────────────────────────┐
+│              Audio API Endpoint (Unified Code)              │
+│         server/api/audio/[reciterId]/[id].get.ts           │
+│                                                             │
+│  • Validates parameters                                     │
+│  • Accesses R2 bucket binding                              │
+│  • Handles Range requests                                   │
+│  • Returns audio stream                                     │
+└────────────────────────┬────────────────────────────────────┘
+                         │
+                         │ R2 API Call
+                         │ bucket.get(objectKey)
+                         │
+        ┌────────────────┴────────────────┐
+        │                                 │
+        ▼                                 ▼
+┌──────────────────┐            ┌──────────────────┐
+│   Development    │            │    Production    │
+│                  │            │                  │
+│  Miniflare R2    │            │  Cloudflare R2   │
+│   Emulator       │            │     Bucket       │
+│                  │            │                  │
+│  .wrangler/      │            │  Global Edge     │
+│  state/v3/r2/    │            │    Network       │
+└──────────────────┘            └──────────────────┘
+```
+
+**Key Principles:**
+- **Single Code Path**: Same R2 API code for all environments
+- **No Conditionals**: No environment detection or branching logic
+- **Realistic Testing**: Local development mirrors production behavior
+- **Simple Onboarding**: Contributors use the same tools as production
+
 ## Audio Engine Architecture
 
 ### Howler.js Integration
@@ -56,21 +103,130 @@ if ('mediaSession' in navigator) {
 
 ## Audio Streaming Strategy
 
-### Environment-Aware Audio Sources
+### Unified R2 Storage Architecture
+
+The application uses **Cloudflare R2** for audio storage in both development and production environments, eliminating environment-specific code paths.
+
+**Architecture Benefits:**
+- ✅ Single code path for all environments
+- ✅ Consistent behavior between development and production
+- ✅ Simplified maintenance and testing
+- ✅ Realistic local development experience
+
+**Development Environment:**
+- Uses **Wrangler** with **Miniflare** for local R2 emulation
+- Local R2 data stored in `.wrangler/state/v3/r2/`
+- Seed audio files from `seed-data/audio/` directory
+- Same R2 API as production
+
+**Production Environment:**
+- Uses Cloudflare R2 bucket
+- Global edge network distribution
+- Automatic CDN caching
+- Same R2 API as development
+
+### Audio URL Generation
 
 ```typescript
-// Audio source configuration (useAudioConfig.ts)
-const config = useRuntimeConfig()
-
+// Unified audio URL generation for all environments
 const getAudioUrl = (surahId: number, reciterId: number): string => {
-  if (config.public.useLocalAudio) {
-    // Development: Local files
-    return `/audio/${String(reciterId).padStart(3, '0')}/${String(surahId).padStart(3, '0')}.mp3`
-  } else {
-    // Production: R2/CDN streaming
-    return `https://audio.quran.in.th/${reciterId}/${surahId}.mp3`
-  }
+  // API endpoint handles R2 retrieval in both environments
+  const paddedReciterId = String(reciterId).padStart(3, '0')
+  const paddedSurahId = String(surahId).padStart(3, '0')
+  return `/api/audio/${paddedReciterId}/${paddedSurahId}`
 }
+
+// Example URLs:
+// /api/audio/001/001  → Reciter 1, Surah 1
+// /api/audio/002/114  → Reciter 2, Surah 114
+```
+
+### R2 Object Structure
+
+Audio files are stored in R2 with the following key structure:
+
+```
+R2 Bucket: quran-audio-bucket
+├── 001/              # Reciter ID (padded to 3 digits)
+│   ├── 001.ogg      # Surah 1
+│   ├── 002.ogg      # Surah 2
+│   └── ...
+├── 002/              # Another reciter
+│   ├── 001.ogg
+│   └── ...
+└── ...
+```
+
+### Local R2 Development Setup
+
+**Initial Setup:**
+```bash
+# 1. Install dependencies (includes Wrangler)
+npm install
+
+# 2. Seed local R2 bucket with audio files
+npm run seed:r2
+
+# 3. Start development server with R2 emulation
+npm run dev:cf
+```
+
+**Seed Data Management:**
+```bash
+# Seed local R2 with sample audio files
+npm run seed:r2
+
+# Force overwrite existing files
+npm run seed:r2:force
+
+# Clean local R2 storage
+npm run clean:r2
+
+# Clean and re-seed
+npm run clean:r2 && npm run seed:r2
+```
+
+**Seed Data Structure:**
+```
+seed-data/audio/
+├── 001/              # Reciter ID
+│   ├── 001.ogg      # Surah files
+│   └── 002.ogg
+└── 002/
+    ├── 001.ogg
+    └── 002.ogg
+```
+
+### API Endpoint Implementation
+
+The audio API endpoint (`server/api/audio/[reciterId]/[id].get.ts`) uses the same R2 code for both environments:
+
+```typescript
+// Unified R2 implementation - no environment conditionals
+export default defineEventHandler(async (event) => {
+  // Extract parameters
+  const reciterId = getRouterParam(event, 'reciterId')
+  const surahId = getRouterParam(event, 'id')
+
+  // Get R2 bucket binding (works in both dev and prod)
+  const bucket = event.context.cloudflare.env.AUDIO_BUCKET
+
+  // Build R2 object key
+  const objectKey = `${reciterId}/${surahId}.ogg`
+
+  // Fetch from R2 (Miniflare in dev, Cloudflare R2 in prod)
+  const object = await bucket.get(objectKey)
+
+  if (!object) {
+    throw createError({
+      statusCode: 404,
+      message: 'Audio file not found'
+    })
+  }
+
+  // Stream audio with Range request support
+  return object.body
+})
 ```
 
 ### Progressive Loading Strategy
@@ -190,6 +346,40 @@ const seekToVerse = (verseNumber: number) => {
 
 ## Network Optimization
 
+### R2 Range Request Support
+
+The audio API endpoint supports HTTP Range requests for efficient seeking and streaming:
+
+```typescript
+// Range request handling in audio API endpoint
+const handleRangeRequest = async (event, bucket, objectKey) => {
+  const rangeHeader = getHeader(event, 'range')
+
+  if (rangeHeader) {
+    // Parse range header: "bytes=0-1023"
+    const [start, end] = parseRangeHeader(rangeHeader)
+
+    // Fetch partial content from R2
+    const object = await bucket.get(objectKey, {
+      range: { offset: start, length: end ? end - start + 1 : undefined }
+    })
+
+    // Return 206 Partial Content
+    return new Response(object.body, {
+      status: 206,
+      headers: {
+        'Content-Range': `bytes ${start}-${end}/${totalSize}`,
+        'Content-Length': String(end - start + 1),
+        'Accept-Ranges': 'bytes'
+      }
+    })
+  }
+
+  // Return full file
+  return bucket.get(objectKey)
+}
+```
+
 ### Connection Type Detection
 
 ```typescript
@@ -204,12 +394,6 @@ const detectNetworkType = () => {
 
   const cellularTypes = ['slow-2g', '2g', '3g']
   return cellularTypes.includes(connection.effectiveType) ? 'cellular' : 'wifi'
-}
-
-// Adaptive bitrate based on connection
-const getOptimalAudioUrl = (surahId: number, reciterId: number) => {
-  const quality = networkType.value === 'cellular' ? 'low' : 'high'
-  return buildAudioUrl(surahId, reciterId, quality)
 }
 ```
 
@@ -378,36 +562,90 @@ const unlockAudioContext = () => {
 
 ## API Integration
 
-### External Audio Sources
+### R2 Storage Integration
+
+The application integrates with Cloudflare R2 for audio storage through a unified API endpoint:
 
 ```typescript
-// Integration with Quran audio APIs
-const fetchAudioMetadata = async (surahId: number, reciterId: number): Promise<AudioFile> => {
-  try {
-    const response = await fetch(`/api/audio/${reciterId}/${surahId}`)
-    if (!response.ok) throw new Error(`HTTP ${response.status}`)
+// Audio API endpoint: server/api/audio/[reciterId]/[id].get.ts
+export default defineEventHandler(async (event) => {
+  // Get R2 bucket binding from Cloudflare Workers environment
+  const bucket = event.context.cloudflare.env.AUDIO_BUCKET
 
-    const data: AudioResponse = await response.json()
-    return data.audio_files[0]
-  } catch (error) {
-    console.error('Failed to fetch audio metadata:', error)
-    throw error
+  if (!bucket) {
+    throw createError({
+      statusCode: 500,
+      message: 'R2 bucket binding not available'
+    })
   }
+
+  // Build R2 object key
+  const reciterId = getRouterParam(event, 'reciterId')
+  const surahId = getRouterParam(event, 'id')
+  const objectKey = `${reciterId}/${surahId}.ogg`
+
+  // Fetch from R2 with Range request support
+  const rangeHeader = getHeader(event, 'range')
+  const object = await bucket.get(objectKey, {
+    range: rangeHeader ? parseRange(rangeHeader) : undefined
+  })
+
+  if (!object) {
+    throw createError({
+      statusCode: 404,
+      message: 'Audio file not found'
+    })
+  }
+
+  // Return audio stream with appropriate headers
+  return new Response(object.body, {
+    headers: {
+      'Content-Type': 'audio/ogg',
+      'Accept-Ranges': 'bytes',
+      'Cache-Control': 'public, max-age=31536000, immutable',
+      'Access-Control-Allow-Origin': '*'
+    }
+  })
+})
+```
+
+### Environment-Agnostic Design
+
+The same code works in both environments:
+
+| Environment | R2 Implementation | Storage Location |
+|-------------|------------------|------------------|
+| **Development** | Miniflare R2 Emulator | `.wrangler/state/v3/r2/` |
+| **Production** | Cloudflare R2 | R2 Bucket (Global) |
+
+**Key Benefits:**
+- No environment detection needed
+- No conditional logic in audio code
+- Identical API behavior
+- Simplified testing and debugging
+
+### Wrangler Configuration
+
+R2 bucket binding is configured in `wrangler.jsonc`:
+
+```jsonc
+{
+  "name": "quran-th",
+  "compatibility_date": "2024-01-01",
+  "r2_buckets": [
+    {
+      "binding": "AUDIO_BUCKET",
+      "bucket_name": "quran-audio-bucket"
+    }
+  ]
 }
 ```
 
-### CDN Integration
-
-```typescript
-// Cloudflare R2 integration for production
-const buildR2AudioUrl = (surahId: number, reciterId: number, quality = 'high') => {
-  const baseUrl = 'https://audio.quran.in.th'
-  const path = `${String(reciterId).padStart(3, '0')}/${String(surahId).padStart(3, '0')}`
-  const suffix = quality === 'high' ? '.mp3' : '_low.mp3'
-
-  return `${baseUrl}/${path}${suffix}`
-}
-```
+This configuration:
+- Provides `AUDIO_BUCKET` binding in Workers environment
+- Works automatically in local development (Miniflare)
+- Works automatically in production (Cloudflare R2)
+- No additional environment variables needed
 
 ---
 

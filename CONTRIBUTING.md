@@ -72,6 +72,204 @@ Open `http://localhost:3000` in your browser.
    npm run typecheck    # Run TypeScript checking
    ```
 
+### Local R2 Development
+
+This project uses **Cloudflare R2** for audio storage in both development and production environments. For local development, Nitro server provides automatic R2 bucket emulation.
+
+#### Why Unified R2?
+
+Previously, the application used different storage approaches for development (`/public/audio/`) and production (Cloudflare R2), requiring conditional logic and environment-specific code paths. The unified R2 approach:
+
+- ✅ Uses the same code in development and production
+- ✅ Eliminates environment-specific conditional logic
+- ✅ Provides realistic local testing with R2 API
+- ✅ Simplifies onboarding for contributors
+- ✅ Ensures development matches production behavior
+
+#### How It Works
+
+**Nitro Server** provides integrated R2 emulation:
+- Nitro is Nuxt's server engine with built-in Cloudflare Workers support
+- Local R2 emulation is provided automatically through Nitro
+- Local R2 data is stored in `.wrangler/state/v3/r2/` directory
+- The same R2 API code works identically in both environments
+- Everything runs through `npm run dev` - no additional setup needed
+
+#### Setup Workflow
+
+1. **Seed Local R2 Bucket**
+   ```bash
+   npm run seed:r2
+   ```
+   This uploads audio files from `seed-data/audio/` to your local R2 bucket.
+
+2. **Start Development Server**
+   ```bash
+   npm run dev
+   ```
+   Nitro automatically starts with R2 emulation enabled.
+
+3. **Access Application**
+   Open `http://localhost:3000` in your browser.
+
+#### Seeding Commands
+
+```bash
+# Seed local R2 with sample audio files
+npm run seed:r2
+
+# Force overwrite existing files in local R2
+npm run seed:r2:force
+
+# Clean local R2 storage (removes all files)
+npm run clean:r2
+
+# Clean and re-seed (fresh start)
+npm run clean:r2 && npm run seed:r2
+```
+
+#### Seed Data Structure
+
+Sample audio files are stored in `seed-data/audio/` with the following structure:
+
+```
+seed-data/audio/
+├── 001/              # Reciter ID (padded to 3 digits)
+│   ├── 001.ogg      # Surah 1: อัล-ฟาติฮะฮ์ (Al-Fatihah)
+│   ├── 112.ogg      # Surah 112: อัล-อิคลาศ (Al-Ikhlas)
+│   ├── 113.ogg      # Surah 113: อัล-ฟะลัก (Al-Falaq)
+│   └── 114.ogg      # Surah 114: อัน-นาส (An-Nas)
+└── 002/              # Another reciter
+    ├── 001.ogg
+    ├── 112.ogg
+    ├── 113.ogg
+    └── 114.ogg
+```
+
+This structure matches the production R2 bucket exactly: `{reciterId}/{surahId}.ogg`
+
+> **Development Audio Files**: The local development environment includes sample audio for only 4 surahs (for both reciters) to keep the repository size manageable. These surahs provide sufficient coverage for testing audio playback, seeking, reciter switching, and error handling functionality.
+
+#### Development Workflow
+
+**First Time Setup:**
+```bash
+npm install          # Install dependencies
+npm run seed:r2      # Seed local R2 bucket
+npm run dev          # Start development server
+```
+
+**Daily Development:**
+```bash
+npm run dev          # Start development server
+```
+
+**Adding New Seed Files:**
+```bash
+# 1. Add audio files to seed-data/audio/{reciterId}/{surahId}.ogg
+# 2. Re-seed local R2
+npm run seed:r2
+```
+
+**Resetting Local R2:**
+```bash
+npm run clean:r2     # Remove all local R2 data
+npm run seed:r2      # Re-seed from scratch
+```
+
+#### Troubleshooting
+
+**Problem**: "R2 bucket binding not found" error
+
+**Solution**: Ensure `wrangler.jsonc` has the R2 bucket configured:
+```jsonc
+{
+  "r2_buckets": [
+    {
+      "binding": "AUDIO_BUCKET",
+      "bucket_name": "quran-audio-bucket"
+    }
+  ]
+}
+```
+
+---
+
+**Problem**: Audio files not playing in development
+
+**Solution**:
+1. Check if local R2 is seeded: `ls -la .wrangler/state/v3/r2/`
+2. Re-seed if empty: `npm run seed:r2`
+3. Restart dev server: `npm run dev`
+
+---
+
+**Problem**: "Cannot find module 'wrangler'" error
+
+**Solution**: Wrangler is included in dependencies. Run:
+```bash
+npm install
+```
+
+---
+
+**Problem**: Seed script fails with "ENOENT" error
+
+**Solution**: Ensure `seed-data/audio/` directory exists with audio files:
+```bash
+ls -la seed-data/audio/
+```
+
+---
+
+**Problem**: Local R2 data persists between sessions
+
+**Solution**: This is expected behavior. Miniflare stores data in `.wrangler/state/` for persistence. To reset:
+```bash
+npm run clean:r2
+npm run seed:r2
+```
+
+---
+
+**Problem**: Port 3000 already in use
+
+**Solution**: Normally the local server will start on another available port automatically, if you really need to use port 3000 try kill the existing process:
+```bash
+# Kill existing process on port 3000
+lsof -ti:3000 | xargs kill -9
+```
+
+#### Understanding Local R2 Storage
+
+**Storage Location**: `.wrangler/state/v3/r2/quran-audio-bucket/`
+
+**File Structure**:
+- R2 objects stored in a SQLite database
+- Object keys match production: `001/001.ogg`, `002/001.ogg`, etc.
+- Metadata (size, etag, content-type) is preserved
+
+**Persistence**:
+- Local R2 data persists between development sessions
+- Stored in `.wrangler/state/` directory (gitignored)
+- Clean with `npm run clean:r2` when needed
+
+**API Compatibility**:
+- Full R2 API implementation
+- Supports `get()`, `head()`, `list()`, `put()`, `delete()`
+- Supports Range requests for audio seeking
+- Returns identical response structures to production
+
+#### Production vs Development
+
+| Aspect | Development | Production |
+|--------|-------------|------------|
+| Storage | `.wrangler/state/v3/r2/` | Cloudflare R2 Bucket |
+| API | Same R2 API | Same R2 API |
+| Code | Identical | Identical |
+| Performance | Local file system | Global edge network |
+| Setup | `npm run seed:r2` | Upload to R2 bucket |
+
 ## 🏗️ Code Architecture Guidelines
 
 ### Component Architecture

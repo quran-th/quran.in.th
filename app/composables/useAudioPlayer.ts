@@ -365,13 +365,7 @@ export const useAudioPlayer = () => {
     const paddedReciterId = reciterId.toString().padStart(3, '0')
     const paddedSurahId = surahId.toString().padStart(3, '0')
 
-    // In development, use direct file paths to avoid API routing issues
-    if (import.meta.dev) {
-      return `/audio/${paddedReciterId}/${paddedSurahId}.ogg`
-    }
-
-    // In production, use the API endpoint
-    return `/api/audio/${paddedReciterId}/${surahId}`
+    return `/api/audio/${paddedReciterId}/${paddedSurahId}`
   }
 
   // Load audio metadata from reciter-specific surah data via API
@@ -444,8 +438,8 @@ export const useAudioPlayer = () => {
       const howl = new Howl({
         src: [audioUrl],
         html5: true, // CRITICAL: Use HTML5 Audio for large files and streaming
-        preload: networkType.value === 'cellular' ? 'metadata' : true,
-        format: ['ogg', 'mp3'], // Explicit format support
+        preload: 'metadata',
+        format: ['ogg'], // Explicit format support
         onload: () => {
           duration.value = howl.duration()
           isLoading.value = false

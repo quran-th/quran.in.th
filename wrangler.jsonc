@@ -23,8 +23,7 @@
 	"r2_buckets": [
 		{
 			"binding": "AUDIO_BUCKET",
-			"bucket_name": "quran-audio-bucket",
-			"experimental_remote": true
+			"bucket_name": "quran-audio-bucket"
 		}
 	],
 	/**
@@ -42,9 +41,6 @@
 	 * Environment Variables
 	 * https://developers.cloudflare.com/workers/wrangler/configuration/#environment-variables
 	 */
-	"vars": {
-		"USE_LOCAL_AUDIO": "false"
-	}
 	/**
 	 * Note: Use secrets to store sensitive data.
 	 * https://developers.cloudflare.com/workers/configuration/secrets/

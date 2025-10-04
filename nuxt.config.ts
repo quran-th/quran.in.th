@@ -97,14 +97,6 @@ export default defineNuxtConfig({
           'Cross-Origin-Embedder-Policy': 'cross-origin'
         }
       },
-      // Audio files - optimized for HTTP streaming
-      '/audio/**': {
-        headers: {
-          'Cache-Control': 'public, max-age=604800, must-revalidate', // 1 week with revalidation
-          'Accept-Ranges': 'bytes', // Enable range requests for seeking
-          'Cross-Origin-Resource-Policy': 'cross-origin'
-        }
-      },
       // Static images and media
       '/**/*.{png,jpg,jpeg,webp,gif,svg,ico}': {
         headers: {
@@ -128,7 +120,7 @@ export default defineNuxtConfig({
     strategies: 'generateSW',
     registerType: 'autoUpdate',
     devOptions: {
-      enabled: true,
+      enabled: false, // Disabled in dev to avoid caching issues during development
       type: 'module'
     },
 
@@ -196,16 +188,9 @@ export default defineNuxtConfig({
 
   runtimeConfig: {
     // Private keys (only available on server-side)
-    // Environment-specific audio handling:
-    // - Development: USE_LOCAL_AUDIO=true (default for local dev)
-    // - Production: USE_LOCAL_AUDIO=false (R2 via Cloudflare Workers)
-    useLocalAudio: process.env.NODE_ENV === 'development' ? true : (process.env.USE_LOCAL_AUDIO === 'true'),
 
     // Public keys (exposed to client-side)
     public: {
-      // Client determines audio source via environment
-      useLocalAudio: process.env.NODE_ENV === 'development' ? true : (process.env.USE_LOCAL_AUDIO === 'true'),
-
       // Build-time app information
       appVersion: packageJson.version,
       buildTime: new Date().toISOString()
