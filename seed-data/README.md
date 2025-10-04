@@ -6,14 +6,28 @@ This directory contains sample audio files used to seed the local R2 bucket duri
 
 ```
 seed-data/audio/
-├── {reciterId}/
-│   └── {surahId}.ogg
+├── 001/              # Reciter ID (padded to 3 digits)
+│   ├── 001.ogg      # Surah 1: อัล-ฟาติฮะฮ์ (Al-Fatihah)
+│   ├── 112.ogg      # Surah 112: อัล-อิคลาศ (Al-Ikhlas)
+│   ├── 113.ogg      # Surah 113: อัล-ฟะลัก (Al-Falaq)
+│   └── 114.ogg      # Surah 114: อัน-นาส (An-Nas)
+└── 002/              # Another reciter
+    ├── 001.ogg
+    ├── 112.ogg
+    ├── 113.ogg
+    └── 114.ogg
 ```
 
-Example:
+**Development Audio Files**: Only 4 surahs are included in the seed data to keep the repository size manageable while providing sufficient coverage for testing:
+- Surah 1 (Al-Fatihah) - The opening chapter
+- Surah 112 (Al-Ikhlas) - Short surah for quick testing
+- Surah 113 (Al-Falaq) - Short surah for quick testing
+- Surah 114 (An-Nas) - Short surah for quick testing
+
+Example paths:
 - `001/001.ogg` → Reciter 1, Surah 1
-- `002/001.ogg` → Reciter 2, Surah 1
-- `002/002.ogg` → Reciter 2, Surah 2
+- `002/112.ogg` → Reciter 2, Surah 112
+- `001/114.ogg` → Reciter 1, Surah 114
 
 ## Usage
 
