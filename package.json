@@ -16,7 +16,9 @@
 		"lint:fix": "eslint --ext .js,.ts,.vue . --fix",
 		"typecheck": "nuxt typecheck",
 		"release": "semantic-release",
-		"release:dry": "semantic-release --dry-run"
+		"release:dry": "semantic-release --dry-run",
+		"seed:r2": "tsx scripts/seed-r2.ts",
+		"clean:r2": "rm -rf .wrangler/state/v3/r2"
 	},
 	"dependencies": {
 		"@nuxt/eslint": "^1.9.0",
@@ -38,6 +40,7 @@
 		"nitro-cloudflare-dev": "^0.2.2",
 		"nitropack": "^2.12.5",
 		"semantic-release": "^22.0.12",
+		"tsx": "^4.20.6",
 		"typescript": "^5.9.2",
 		"wrangler": "^4.34.0"
 	}

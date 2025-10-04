@@ -15,10 +15,13 @@ Modern Quran audio player application with comprehensive Thai language support, 
 git clone https://github.com/ninearif/quran-th.git
 cd quran-th
 npm install
-npm run dev
+npm run seed:r2      # Seed local R2 bucket with audio files
+npm run dev:cf       # Start development server with Cloudflare Workers
 ```
 
-Open `http://localhost:3000` in your browser.
+Open `http://localhost:8787` in your browser.
+
+> **Note**: This project uses Cloudflare R2 for audio storage. Wrangler (Cloudflare's CLI) is included in dependencies and provides local R2 emulation via Miniflare. The `seed:r2` command populates your local R2 bucket with sample audio files.
 
 ## 📖 Documentation
 
@@ -80,12 +83,14 @@ We welcome contributions! Please see **[CONTRIBUTING.md](CONTRIBUTING.md)** for:
 ### Quick Development Commands
 
 ```bash
-npm run dev          # Local development server
-npm run dev:cf       # Cloudflare Workers environment
+npm run dev:cf       # Start development server (Cloudflare Workers + R2)
+npm run seed:r2      # Seed local R2 bucket with audio files
 npm run build        # Production build
 npm run lint         # Code quality checks
 npm run typecheck    # TypeScript validation
 ```
+
+> **Development Note**: Use `npm run dev:cf` for local development. This starts Wrangler's development server with R2 emulation, ensuring your local environment matches production behavior.
 
 ## 🐛 Issues & Support
 

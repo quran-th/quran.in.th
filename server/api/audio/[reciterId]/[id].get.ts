@@ -46,39 +46,13 @@ export default defineEventHandler(async (event) => {
     })
   }
   
-  // Enhanced environment detection for Cloudflare Workers
-  const runtimeConfig = useRuntimeConfig()
-  const { cloudflare } = event.context
-  const env = cloudflare?.env
-  const useLocalAudio = Boolean(runtimeConfig.useLocalAudio || env?.USE_LOCAL_AUDIO === 'true')
-  
-  if (useLocalAudio) {
-    // Development mode: Enhanced static file serving for Howler.js compatibility
-    const paddedSurahId = surahNumber.toString().padStart(3, '0')
-    const paddedReciterId = reciterNumber.toString().padStart(3, '0')
-    
-    // Howler.js prefers format fallbacks, so we'll redirect to OGG first (smaller, better quality)
-    // then let the client try MP3 if OGG fails
-    const staticPath = `/audio/${paddedReciterId}/${paddedSurahId}.ogg`
-    
-    console.log(`[Audio API] Development mode serving: ${staticPath}`)
-    
-    return new Response(null, {
-      status: 302,
-      headers: {
-        'Location': staticPath,
-        'Access-Control-Allow-Origin': '*',
-        'Access-Control-Expose-Headers': 'Content-Length, Content-Type',
-        'Cache-Control': 'public, max-age=31536000', // Cache for 1 year in development
-        'Vary': 'Accept-Encoding'
-      }
-    })
-  }
-
-  // Production mode: R2 streaming with proper HTTP Range request support
-  const bucket = env?.AUDIO_BUCKET
+  // Unified R2 access for both development and production
+  const bucket = event.context.cloudflare?.env?.AUDIO_BUCKET
   if (!bucket) {
-    throw createError({ statusCode: 503, statusMessage: 'Audio service unavailable' })
+    throw createError({ 
+      statusCode: 503, 
+      statusMessage: 'Audio bucket unavailable. Ensure R2 bucket is configured and seeded in development.' 
+    })
   }
 
   const paddedSurahId = surahNumber.toString().padStart(3, '0')

@@ -123,9 +123,10 @@ const { state, play, pause, seek } = useAudioPlayer()
 - **Audio Metadata**: File sizes, durations, formats
 
 #### Dynamic Audio Content
-- **Development**: Local audio files (`/public/audio/`)
-- **Production**: R2 storage via Cloudflare Workers
+- **Development**: Local R2 emulation via Miniflare (seeded from `seed-data/audio/`)
+- **Production**: Cloudflare R2 storage via Workers
 - **Streaming**: Progressive audio loading with Howler.js
+- **Unified API**: Same R2 interface for both environments
 
 ## Technical Stack
 
@@ -158,32 +159,35 @@ Build: Nitro with cloudflare_module preset
 
 ### Development Environment
 ```yaml
-Audio Source: Local files in /public/audio/
-API Mode: Node.js development server
+Audio Source: Local R2 via Miniflare (seeded from seed-data/audio/)
+API Mode: Wrangler dev server with R2 emulation
 Hot Reload: Vite HMR with Vue DevTools
-Network: localhost:3000 with CORS disabled
+Network: localhost:8787 with R2 binding
+Storage: .wrangler/state/v3/r2/ (persistent)
 ```
 
 ### Production Environment
 ```yaml
-Audio Source: R2 storage via Workers
+Audio Source: Cloudflare R2 storage
 API Mode: Cloudflare Workers runtime
 CDN: Global edge locations
 Network: Custom domain with SSL
+Storage: R2 bucket (quran-audio-bucket)
 ```
 
 ### Configuration Management
 ```typescript
-// nuxt.config.ts - Environment-aware configuration
+// nuxt.config.ts - Unified R2 configuration
 runtimeConfig: {
-  // Server-only (private)
-  useLocalAudio: process.env.NODE_ENV === 'development',
-
-  // Client-exposed (public)
+  // Public configuration
   public: {
-    useLocalAudio: process.env.NODE_ENV === 'development'
+    appVersion: packageJson.version,
+    buildTime: new Date().toISOString()
   }
 }
+
+// R2 bucket binding configured in wrangler.jsonc
+// Works identically in development (Miniflare) and production
 ```
 
 ## Performance Architecture

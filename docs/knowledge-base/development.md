@@ -234,23 +234,21 @@ export default {
 ```bash
 # Environment variables (.env.local)
 NODE_ENV=development
-USE_LOCAL_AUDIO=true
 NUXT_PUBLIC_API_BASE=http://localhost:3000
 
-# Audio files location
-public/audio/001/001.mp3  # Reciter 1, Surah 1
-public/audio/002/001.mp3  # Reciter 2, Surah 1
+# Audio files served from local R2 (via Wrangler/Miniflare)
+# Seed data location: seed-data/audio/001/001.ogg
+# Local R2 storage: .wrangler/state/v3/r2/
 ```
 
 ### Production Environment
 ```bash
 # Cloudflare Workers environment
 NODE_ENV=production
-USE_LOCAL_AUDIO=false
 NUXT_PUBLIC_API_BASE=https://your-domain.com
 
-# Audio served from R2/CDN
-https://audio.quran.in.th/001/001.mp3
+# Audio served from Cloudflare R2
+# Accessed via AUDIO_BUCKET binding
 ```
 
 ## Debugging Techniques
@@ -322,12 +320,15 @@ export const reciters: Reciter[] = [
   }
 ]
 
-// 2. Add audio files
-// public/audio/003/001.mp3
-// public/audio/003/002.mp3
+// 2. Add audio files to seed data
+// seed-data/audio/003/001.ogg
+// seed-data/audio/003/002.ogg
 // ... etc
 
-// 3. Update reciter-specific metadata (if needed)
+// 3. Seed the local R2 bucket
+// npm run seed:r2
+
+// 4. Update reciter-specific metadata (if needed)
 // app/data/surah/001.json, app/data/surah/002.json
 ```
 
