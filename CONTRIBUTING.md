@@ -74,7 +74,7 @@ Open `http://localhost:3000` in your browser.
 
 ### Local R2 Development
 
-This project uses **Cloudflare R2** for audio storage in both development and production environments. For local development, we use **Wrangler** (Cloudflare's CLI tool) with **Miniflare**, which provides automatic R2 bucket emulation.
+This project uses **Cloudflare R2** for audio storage in both development and production environments. For local development, Nitro server provides automatic R2 bucket emulation.
 
 #### Why Unified R2?
 
@@ -88,11 +88,12 @@ Previously, the application used different storage approaches for development (`
 
 #### How It Works
 
-**Wrangler + Miniflare** provides local R2 emulation:
-- Wrangler is Cloudflare's official CLI tool (included in dependencies)
-- Miniflare is bundled with Wrangler and provides R2 emulation
+**Nitro Server** provides integrated R2 emulation:
+- Nitro is Nuxt's server engine with built-in Cloudflare Workers support
+- Local R2 emulation is provided automatically through Nitro
 - Local R2 data is stored in `.wrangler/state/v3/r2/` directory
 - The same R2 API code works identically in both environments
+- Everything runs through `npm run dev` - no additional setup needed
 
 #### Setup Workflow
 
@@ -104,12 +105,12 @@ Previously, the application used different storage approaches for development (`
 
 2. **Start Development Server**
    ```bash
-   npm run dev:cf
+   npm run dev
    ```
-   This starts Wrangler's development server with R2 emulation enabled.
+   Nitro automatically starts with R2 emulation enabled.
 
 3. **Access Application**
-   Open `http://localhost:8787` in your browser.
+   Open `http://localhost:3000` in your browser.
 
 #### Seeding Commands
 
@@ -153,14 +154,14 @@ This structure matches the production R2 bucket exactly: `{reciterId}/{surahId}.
 
 **First Time Setup:**
 ```bash
-npm install          # Install dependencies (includes Wrangler)
+npm install          # Install dependencies
 npm run seed:r2      # Seed local R2 bucket
-npm run dev:cf       # Start development server
+npm run dev          # Start development server
 ```
 
 **Daily Development:**
 ```bash
-npm run dev:cf       # Start development server
+npm run dev          # Start development server
 ```
 
 **Adding New Seed Files:**
@@ -196,10 +197,10 @@ npm run seed:r2      # Re-seed from scratch
 
 **Problem**: Audio files not playing in development
 
-**Solution**: 
+**Solution**:
 1. Check if local R2 is seeded: `ls -la .wrangler/state/v3/r2/`
 2. Re-seed if empty: `npm run seed:r2`
-3. Restart dev server: `npm run dev:cf`
+3. Restart dev server: `npm run dev`
 
 ---
 
@@ -231,15 +232,12 @@ npm run seed:r2
 
 ---
 
-**Problem**: Port 8787 already in use
+**Problem**: Port 3000 already in use
 
-**Solution**: Kill the existing process or use a different port:
+**Solution**: Normally the local server will start on another available port automatically, if you really need to use port 3000 try kill the existing process:
 ```bash
-# Kill existing process
-lsof -ti:8787 | xargs kill -9
-
-# Or use different port
-wrangler dev --port 8788
+# Kill existing process on port 3000
+lsof -ti:3000 | xargs kill -9
 ```
 
 #### Understanding Local R2 Storage
@@ -247,7 +245,7 @@ wrangler dev --port 8788
 **Storage Location**: `.wrangler/state/v3/r2/quran-audio-bucket/`
 
 **File Structure**:
-- Miniflare stores R2 objects in a SQLite database
+- R2 objects stored in a SQLite database
 - Object keys match production: `001/001.ogg`, `002/001.ogg`, etc.
 - Metadata (size, etag, content-type) is preserved
 
@@ -257,15 +255,15 @@ wrangler dev --port 8788
 - Clean with `npm run clean:r2` when needed
 
 **API Compatibility**:
-- Miniflare implements the full R2 API
+- Full R2 API implementation
 - Supports `get()`, `head()`, `list()`, `put()`, `delete()`
 - Supports Range requests for audio seeking
 - Returns identical response structures to production
 
 #### Production vs Development
 
-| Aspect | Development (Miniflare) | Production (Cloudflare R2) |
-|--------|------------------------|----------------------------|
+| Aspect | Development | Production |
+|--------|-------------|------------|
 | Storage | `.wrangler/state/v3/r2/` | Cloudflare R2 Bucket |
 | API | Same R2 API | Same R2 API |
 | Code | Identical | Identical |

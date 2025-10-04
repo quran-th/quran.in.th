@@ -6,7 +6,7 @@
 	"scripts": {
 		"build": "nuxt build",
 		"dev": "nuxt dev",
-		"dev:cf": "wrangler dev --x-remote-bindings",
+		"dev:cf": "nuxt build && wrangler dev --x-remote-bindings",
 		"generate": "nuxt generate",
 		"preview": "npm run build && npx wrangler --cwd .output dev",
 		"postinstall": "nuxt prepare",

@@ -120,7 +120,7 @@ export default defineNuxtConfig({
     strategies: 'generateSW',
     registerType: 'autoUpdate',
     devOptions: {
-      enabled: true,
+      enabled: false, // Disabled in dev to avoid caching issues during development
       type: 'module'
     },
 

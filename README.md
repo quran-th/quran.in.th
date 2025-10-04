@@ -16,12 +16,12 @@ git clone https://github.com/ninearif/quran-th.git
 cd quran-th
 npm install
 npm run seed:r2      # Seed local R2 bucket with audio files
-npm run dev:cf       # Start development server with Cloudflare Workers
+npm run dev          # Start development server
 ```
 
-Open `http://localhost:8787` in your browser.
+Open `http://localhost:3000` in your browser.
 
-> **Note**: This project uses Cloudflare R2 for audio storage. Wrangler (Cloudflare's CLI) is included in dependencies and provides local R2 emulation via Miniflare. The `seed:r2` command populates your local R2 bucket with sample audio files.
+> **Note**: This project uses Cloudflare R2 for audio storage. The development server automatically provides local R2 emulation through Nitro. The `seed:r2` command populates your local R2 bucket with sample audio files.
 
 > **Development Audio**: The local development environment includes sample audio for 4 surahs only (for both reciters):
 > - Surah 1: อัล-ฟาติฮะฮ์ (Al-Fatihah)
@@ -89,14 +89,14 @@ We welcome contributions! Please see **[CONTRIBUTING.md](CONTRIBUTING.md)** for:
 ### Quick Development Commands
 
 ```bash
-npm run dev:cf       # Start development server (Cloudflare Workers + R2)
+npm run dev          # Start development server
 npm run seed:r2      # Seed local R2 bucket with audio files
 npm run build        # Production build
 npm run lint         # Code quality checks
 npm run typecheck    # TypeScript validation
 ```
 
-> **Development Note**: Use `npm run dev:cf` for local development. This starts Wrangler's development server with R2 emulation, ensuring your local environment matches production behavior.
+> **Development Note**: The `dev` command uses Nitro server with automatic R2 emulation. Your local environment automatically matches production behavior.
 
 ## 🐛 Issues & Support
 
